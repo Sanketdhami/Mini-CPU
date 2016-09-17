@@ -30,8 +30,7 @@ enum registers{A, B , C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q};
 
 
 /* Program Counter */
-unsigned int pc;
-pc = INSTR_MEMORY_BASE_ADD;
+unsigned int pc = INSTR_MEMORY_BASE_ADD;
 
 /* Stack Pointer */
 unsigned int sp;
@@ -72,12 +71,13 @@ void init_temp_reg( )
 }
 
 int execute_load(int dest, int src, int offset){
-	address = reg[src] + offset;
+	int address = reg[src] + offset;
 	if(address >= INSTR_MEMORY_BASE_ADD && address < MEMORY_SIZE){
 		reg[dest] = memory[address];
 		pc = pc + 4;
+		return 0;
 	}	
-	return 0;
+	
 }
 
 
@@ -94,7 +94,7 @@ int main(){
 	while(pc < MEMORY_SIZE){
 		printf("\nFormat for entering opcode: LOAD dest_reg,offset (src_reg) Eg: LOAD A,30(B) \n");
 		printf("Format for entering opcode: STORE dest_reg,offset (src_reg) Eg: STORE A,30(B) \n");
-		printf("Enter instructions LOAD/STORE/EXIT\n");
+		printf("Enter instructions LOAD/STORE/PRINT/EXIT\n");
 		fgets(instruction,20,stdin);
 		p1 = strtok(instruction, " ,()");
 		if (strcasecmp(p1, "LOAD")==0) {
@@ -102,18 +102,17 @@ int main(){
 			p2 = strtok(NULL," ");    
 	      		destreg = strtok(p2,",");
 			dest = destreg[0] - 'A';      /*Index for Destination register*/
-			if(regtr1 > Q){
+			if(dest > Q){
 				printf("Destination registers should be for Register A-Q\n");
 				break;
 			}	      
               		p2 = strtok(NULL,",");
 	      		offset = atoi(strtok(p2,"("));
-			printf("\n %d",offset);
 		        p2 = strtok(NULL,"(");
-			srcreg = strtok(temp_str,")");
+			srcreg = strtok(p2,")");
 			src = srcreg[0] - 'A';     /*Index for source register*/
-			if(regtr2 > Q){
-				printf("Destination registers should be for Register A-Q\n");
+			if(src > Q){
+				printf("Source registers should be for Register A-Q\n");
 				break;
 			}
 			result = execute_load(dest, src, offset);
@@ -125,6 +124,9 @@ int main(){
 		else if (strcasecmp(p1, "STORE")==0) {
 
 
+		}
+		else if(strcasecmp(p1, "PRINT")==0){
+		
 		}
 		else{
 			break;
