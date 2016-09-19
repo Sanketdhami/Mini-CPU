@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <stdbool.h>
 
 #define MEMORY_SIZE 2048     
 #define REG_COUNT 16         
@@ -62,7 +63,7 @@ void init_memory( )
  	{
  		memory[i] = 0;		
 	}
-	memory[730]=100;
+	memory[1070]=100;
 }
 
 /****************Function for LOAD Instruction *********************************************/
@@ -77,7 +78,7 @@ int execute_load(){
 	offset =  memory[pc+2];
 	dest = memory[pc+3];
 	address = reg[src] + offset;
-	if(address >= INSTR_MEMORY_BASE_ADD && address < MEMORY_SIZE){
+	if(address >= DATA_MEMORY_BASE_ADD && address < MEMORY_SIZE){
 		reg[dest] = memory[address];
 		pc = pc + 4;
 		printf("LOAD Instruction executed successfully\n\n\n");
@@ -100,7 +101,7 @@ int execute_store(){
 	offset =  memory[pc+2];
 	dest = memory[pc+3];
 	address = reg[src] + offset;
-	if(address >= INSTR_MEMORY_BASE_ADD && address < MEMORY_SIZE){
+	if(address >= DATA_MEMORY_BASE_ADD && address < MEMORY_SIZE){
 		memory[address] = reg[dest];
 		pc = pc + 4;
 		printf("STORE Instruction executed successfully\n\n\n");
@@ -147,8 +148,8 @@ int main(){
 	char instruction[20];
 	int result;
 	init_memory();
-	reg[0] = 700;
-	reg[1] = 700;	
+	reg[0] = 1024;
+	reg[1] = 1040;	
 	result = print_values();
 	while(pc < MEMORY_SIZE){
 		printf("Enter instructions LOAD/STORE/EXIT\n");
