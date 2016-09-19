@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdbool.h>
+#include<stdbool.h>
 
 #define MEMORY_SIZE 2048     
 #define REG_COUNT 16         
@@ -135,6 +135,16 @@ int print_values(){
 	printf("Program Counter(dec):%d\n",pc);
 	printf("Program Counter(HEX):%xH\n",pc);
 	printf("*****************Value of Stack Pointer******************\n");
+    printf("Value of Flag register\n");
+	printf("Carry Flag = %d\t",flags[0]);
+	printf("Parity Flag = %d\t",flags[2]);
+	printf("Auxiliary Flag = %d\t",flags[4]);
+	printf("Zero Flag = %d\t",flags[6]);
+	printf("Sign Flag = %d\t",flags[7]);
+	printf("Trap Flag = %d\t",flags[8]);
+	printf("Interrupt Flag = %d\t",flags[9]);
+	printf("Direction Flag = %d\t",flags[10]);
+	printf("Overflow Flag = %d\t",flags[11]);
 	printf("Stack Pointer(dec):%d\n",sp);
 	printf("Stack Pointer(HEX):%xH\n",sp);
 	printf("\n\n\n");
