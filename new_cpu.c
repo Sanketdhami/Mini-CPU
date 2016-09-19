@@ -48,7 +48,7 @@ bool flags[16]={ false };	/* flag register for setting various flags*/
 unsigned int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
 
 /* Stack Pointer */
-unsigned int sp = MEMORY_SIZE-1S;
+unsigned int sp = MEMORY_SIZE-1;
 char *p1 = NULL;
 int address;
 
