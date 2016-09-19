@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include<stdbool.h>
 
 #define MEMORY_SIZE 2048     
 #define REG_COUNT 16         
@@ -31,6 +32,18 @@ unsigned int src=0, dest=0;	/* Index for source and destination registers */
 unsigned int opcode = 0;	
 unsigned int offset=0;
 
+bool flags[16]={ false };	/* flag register for setting various flags*/
+/*Carry Flag = flags[0]
+ * Parity Flag = flags[2]
+ * Auxiliary Carry Flag = flags[4]
+ * Zero Flag = flags[6]
+ * Sign Flag = flags[7]
+ * Trap Flag = flags[8]
+ * Interrupt Flag = flags[9]
+ * Direction flag = flags[10]
+ * Overflow flag = flags[11]
+ * All Others are reserved
+ *  */
 
 /* Program Counter */
 unsigned int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
