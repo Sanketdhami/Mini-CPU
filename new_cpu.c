@@ -54,8 +54,6 @@ char *p1 = NULL;
 int address;
 
 
-/******STACK MEMORY****/
-
 void init_memory( )
 {
 	int i;
@@ -134,8 +132,8 @@ int print_values(){
 	printf("*****************Value of Program Counter******************\n");
 	printf("Program Counter(dec):%d\n",pc);
 	printf("Program Counter(HEX):%xH\n",pc);
-	printf("*****************Value of Stack Pointer******************\n");
-    printf("Value of Flag register\n");
+
+	printf("*****************Value of Flag Register******************\n");
 	printf("Carry Flag = %d\t",flags[0]);
 	printf("Parity Flag = %d\t",flags[2]);
 	printf("Auxiliary Flag = %d\t",flags[4]);
@@ -144,7 +142,9 @@ int print_values(){
 	printf("Trap Flag = %d\t",flags[8]);
 	printf("Interrupt Flag = %d\t",flags[9]);
 	printf("Direction Flag = %d\t",flags[10]);
-	printf("Overflow Flag = %d\t",flags[11]);
+	printf("Overflow Flag = %d\n",flags[11]);
+
+	printf("*****************Value of Stack Pointer******************\n");
 	printf("Stack Pointer(dec):%d\n",sp);
 	printf("Stack Pointer(HEX):%xH\n",sp);
 	printf("\n\n\n");
