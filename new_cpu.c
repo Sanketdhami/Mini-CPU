@@ -11,29 +11,29 @@
 #include <string.h>
 #include <strings.h>
 
-#define MEMORY_SIZE 2048
-#define REG_COUNT 16
-#define TEMP_REG_COUNT 16
-#define DATA_MEMORY_BASE_ADD 1024 /*Need to discuss*/
-#define INSTR_MEMORY_BASE_ADD 256 /*Need to discuss*/
-#define BOOT_MEMORY_BASE_ADD 0
+#define MEMORY_SIZE 2048     
+#define REG_COUNT 16         
+#define TEMP_REG_COUNT 16	
+#define DATA_MEMORY_BASE_ADD 1024	/* Base Address of Data Memory = 1024 */
+#define INSTR_MEMORY_BASE_ADD 256	/* Base Address of Instruction Memory = 256 */
+#define BOOT_MEMORY_BASE_ADD 0		/* Base Address of BIOS = 0 */
 
-#define STORE_OPCODE 3
-#define LOAD_OPCODE 4
+#define STORE_OPCODE 3		/* Opcode for STORE instruction */
+#define LOAD_OPCODE 4		/* Opcode for LOAD instruction */
 
-unsigned int memory[MEMORY_SIZE];
-unsigned int reg[REG_COUNT];
-unsigned int temp_reg[TEMP_REG_COUNT];
+unsigned int memory[MEMORY_SIZE];	/* Total Memory size = 2048 bytes */
+unsigned int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
+unsigned int temp_reg[TEMP_REG_COUNT];		/* Number of Temporary Registers = 16 */
 
 
 enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q};
-unsigned int src=0, dest=0;
-unsigned int opcode = 0;
+unsigned int src=0, dest=0;	/* Index for source and destination registers */
+unsigned int opcode = 0;	
 unsigned int offset=0;
 
 
 /* Program Counter */
-unsigned int pc = INSTR_MEMORY_BASE_ADD;
+unsigned int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
 
 /* Stack Pointer */
 unsigned int sp;
@@ -54,7 +54,12 @@ void init_memory( )
 	memory[730]=100;
 }
 
-
+/****************Function for LOAD Instruction *********************************************/
+/*	On executing LOAD destreg,offset(srcreg) instruction, the address or 
+	value present in source register is added with offset which will result 
+	into final address. The value present in final address is then loaded in 
+	destination register.*/
+/*******************************************************************************************/
 int execute_load(){
 	opcode = memory[pc];
 	src = memory[pc+1];
@@ -66,9 +71,18 @@ int execute_load(){
 		pc = pc + 4;
 		printf("LOAD Instruction executed successfully\n\n\n");
 		return 0;
+	}
+	else{ 
+		printf("Invalid location\n");
 	}		
 }
 
+/****************Function for STORE Instruction *********************************************/
+/*	On executing STORE destreg,offset(srcreg) instruction, the address or 
+	value present in source register is added with offset which will result 
+	into final address. The value present in destination register is then 
+	loaded in memory's final address.*/
+/*******************************************************************************************/
 int execute_store(){
 	opcode = memory[pc];
 	src = memory[pc+1];
@@ -76,14 +90,17 @@ int execute_store(){
 	dest = memory[pc+3];
 	address = reg[src] + offset;
 	if(address >= INSTR_MEMORY_BASE_ADD && address < MEMORY_SIZE){
-		memory[dest] = reg[address];
+		memory[address] = reg[dest];
 		pc = pc + 4;
 		printf("STORE Instruction executed successfully\n\n\n");
 		return 0;
 	}
+	else{ 
+		printf("Invalid location\n");
+	}
 }
 
-
+/********Function for printing values of registers, memory, flags *********/
 int print_values(){
 	printf("**************Values of Registers****************\n");
 	int x = 0;
