@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include<stdbool.h>
 
 #define MEMORY_SIZE 2048     
 #define REG_COUNT 16         
@@ -27,7 +26,7 @@ unsigned int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
 unsigned int temp_reg[TEMP_REG_COUNT];		/* Number of Temporary Registers = 16 */
 
 
-enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q};
+enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P};
 unsigned int src=0, dest=0;	/* Index for source and destination registers */
 unsigned int opcode = 0;	
 unsigned int offset=0;
@@ -49,10 +48,9 @@ bool flags[16]={ false };	/* flag register for setting various flags*/
 unsigned int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
 
 /* Stack Pointer */
-unsigned int sp;
+unsigned int sp = MEMORY_SIZE-1;
 char *p1 = NULL;
 int address;
-/****FLAGS*****/
 
 
 /******STACK MEMORY****/
@@ -125,13 +123,19 @@ int print_values(){
 	printf("*****************Value of Instruction Register******************\n");
 	printf("Instruction Register:%s\n", p1);
 	printf("*****************Value of MAR******************\n");
-	printf("MAR:%u\n",address);
+	printf("MAR(dec):%d\n",address);
+	printf("MAR(HEX):%xH\n",address);
 	printf("*****************Value of MDR******************\n");
 	printf("MDR:%u\n",memory[address]);
 	printf("*****************Current Memory location******************\n");
-	printf("Memory Location:%u\n",address);
+	printf("Memory Location(dec):%d\n",address);
+	printf("Memory Location(HEX):%xH\n",address);
 	printf("*****************Value of Program Counter******************\n");
-	printf("Program Counter:%u\n",pc);
+	printf("Program Counter(dec):%d\n",pc);
+	printf("Program Counter(HEX):%xH\n",pc);
+	printf("*****************Value of Stack Pointer******************\n");
+	printf("Stack Pointer(dec):%d\n",sp);
+	printf("Stack Pointer(HEX):%xH\n",sp);
 	printf("\n\n\n");
 	return 0;
 }
@@ -157,7 +161,7 @@ int main(){
 			p2 = strtok(NULL," ");    
 	      		destreg = strtok(p2,",");
 			dest = destreg[0] - 'A';      /*Index for Destination register*/
-			if(dest > Q){
+			if(dest >= P){
 				printf("Destination registers should be from Register A-Q \n");
 				break;
 			}	      
@@ -169,7 +173,7 @@ int main(){
 			}
 			srcreg = strtok(p2,")");
 			src = srcreg[0] - 'A';     /*Index for source register*/
-			if(src > Q){
+			if(src >= P){
 				printf("Source registers should be from Register A-Q \n");
 				break;
 			}
@@ -195,7 +199,7 @@ int main(){
 			p2 = strtok(NULL," ");
 	      		destreg = strtok(p2,",");
 			dest = destreg[0] - 'A';      /*Index for Destination register*/
-			if(dest > Q){
+			if(dest >= P){
 				printf("Destination registers should be from Register A-Q \n");
 				break;
 			}
@@ -207,7 +211,7 @@ int main(){
 			}
 			srcreg = strtok(p2,")");
 			src = srcreg[0] - 'A';     /*Index for source register*/
-			if(src > Q){
+			if(src >= P){
 				printf("Source registers should be from Register A-Q \n");
 				break;
 			}
