@@ -69,6 +69,20 @@ int execute_load(){
 	}		
 }
 
+int execute_store(){
+	opcode = memory[pc];
+	src = memory[pc+1];
+	offset =  memory[pc+2];
+	dest = memory[pc+3];
+	address = reg[src] + offset;
+	if(address >= INSTR_MEMORY_BASE_ADD && address < MEMORY_SIZE){
+		memory[dest] = reg[address];
+		pc = pc + 4;
+		printf("STORE Instruction executed successfully\n\n\n");
+		return 0;
+	}
+}
+
 
 int print_values(){
 	printf("**************Values of Registers****************\n");
@@ -146,6 +160,42 @@ int main(){
 			}	      	
 		}
 		else if (strcasecmp(p1, "STORE")==0) {
+
+			opcode = STORE_OPCODE;
+			p2 = strtok(NULL," ");
+	      		destreg = strtok(p2,",");
+			dest = destreg[0] - 'A';      /*Index for Destination register*/
+			if(dest > Q){
+				printf("Destination registers should be from Register A-Q \n");
+				break;
+			}
+              		p2 = strtok(NULL,",");
+	      		offset = atoi(strtok(p2,"("));
+		        p2 = strtok(NULL,"(");
+			if(p2 == NULL){
+				offset = 0;
+			}
+			srcreg = strtok(p2,")");
+			src = srcreg[0] - 'A';     /*Index for source register*/
+			if(src > Q){
+				printf("Source registers should be from Register A-Q \n");
+				break;
+			}
+			memory[INSTR_MEMORY_BASE_ADD + i] = opcode;
+			memory[INSTR_MEMORY_BASE_ADD + i+1] = src;
+			memory[INSTR_MEMORY_BASE_ADD + i+2] = offset;
+			memory[INSTR_MEMORY_BASE_ADD + i+3] = dest;
+			i = i+4;
+			result = execute_store();
+			if (result !=0){
+				printf("Error in executing Load Instruction \n");
+				break;
+			}
+			result = print_values();
+			if (result !=0){
+				printf("Error in printing values \n");
+				break;
+			}
 			
 		}
 		else {
