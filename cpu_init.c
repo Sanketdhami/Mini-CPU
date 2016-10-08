@@ -22,13 +22,13 @@
 #define STORE_OPCODE 3		/* Opcode for STORE instruction */
 #define LOAD_OPCODE 4		/* Opcode for LOAD instruction */
 
-unsigned int memory[MEMORY_SIZE];	/* Total Memory size = 2048 bytes */
-unsigned int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
-unsigned int temp_reg[TEMP_REG_COUNT];		/* Number of Temporary Registers = 16 */
+ int memory[MEMORY_SIZE];	/* Total Memory size = 2048 bytes */
+ int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
+ int temp_reg[TEMP_REG_COUNT];		/* Number of Temporary Registers = 16 */
 enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P};
-unsigned int src=0, dest=0,inti=0;	/* Index for source and destination registers */
-unsigned int opcode = 0;	
-unsigned int offset=0;
+ int src=0, dest=0,inti=0;	/* Index for source and destination registers */
+ int opcode = 0;	
+ int offset=0;
 int i = 0;
 char *destreg = NULL, *srcreg = NULL,*basereg = NULL, *indexreg = NULL,*intreg = NULL;
 bool flags[4]={ false };	/* flag register for setting various flags*/
@@ -39,10 +39,10 @@ bool flags[4]={ false };	/* flag register for setting various flags*/
  *  */
 
 /* Program Counter */
-unsigned int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
+ int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
 
 /* Stack Pointer */
-unsigned int sp = MEMORY_SIZE-1;
+ int sp = MEMORY_SIZE-1;
 char *p1 = NULL;
 int address,part_address,result;
 
@@ -146,6 +146,7 @@ bool alu_operations(){
 	if (strcasecmp(p1, "ADD")==0) {
 		reg[dest] = add(inti,src);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();			
 	}
 		/************************SUBTRACTION***************************/
@@ -153,6 +154,7 @@ bool alu_operations(){
 		{		
 		reg[dest] = sub(inti,src);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		 print_values();		
 		}
 		/************************MULTIPLICATION***************************/
@@ -160,6 +162,7 @@ bool alu_operations(){
 		{
 		reg[dest] = mul(inti,src);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();
 		}
 		/************************DIVISION***************************/
@@ -167,6 +170,7 @@ bool alu_operations(){
 		{	
 		reg[dest] = division(inti,src);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();
 		}
 		/************************MOD***************************/
@@ -174,6 +178,7 @@ bool alu_operations(){
 		{
 		reg[dest] = mod(inti,src);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();
 	}
 	return true;
@@ -201,12 +206,16 @@ int add(int inti, int src){
 int sub(int inti, int src){
 	printf("Performing Subtraction \n");	
 	temp_reg[0] = reg[src];
+	printf("temp reg 0 %d \n",temp_reg[0]);
 	temp_reg[1] = reg[inti]; //2'S compliment
-	printf("temp reg before 2's compliment %d \n",temp_reg[1]);
+	printf("temp reg 0 %d \n",temp_reg[1]);
+	printf("temp reg before 2's compliment %d \n",~temp_reg[0]);
+	temp_reg[0] = add(~temp_reg[0], 1);
 	temp_reg[1] = add(~temp_reg[1], 1);
-	printf("temp reg after 2's compliment %d \n",temp_reg[1]);
-	temp_reg[1] = add(temp_reg[1], temp_reg[0]);
-	return temp_reg[1];
+	printf("temp reg 0 after 2's compliment %d \n",temp_reg[0]);
+	temp_reg[0] = add(temp_reg[0], temp_reg[1]);
+	printf("temp reg 0 %d \n",temp_reg[0]);
+	return temp_reg[0];
 }
 
 /*****************************************MULTIPLICATION FUNCTION*****************************************/
