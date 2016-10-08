@@ -3,7 +3,7 @@
     OBJECTIVE: Develop Best CPU.
     DESCRIPTION: Setup CPU architecture with LOAD and STORE data and ALU operations. 
     TEAM MEMBERS: Sanket Dhami, Karthik Sadanand, Ramyashree, Neha Rege
-    DATE: 24th Sep, 2016
+    DATE: 8th Oct, 2016
    ****************************************************************************************************** */
   
 #include <stdio.h>
