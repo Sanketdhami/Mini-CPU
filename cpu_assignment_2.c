@@ -22,13 +22,13 @@
 #define STORE_OPCODE 3		/* Opcode for STORE instruction */
 #define LOAD_OPCODE 4		/* Opcode for LOAD instruction */
 
-unsigned int memory[MEMORY_SIZE];	/* Total Memory size = 2048 bytes */
-unsigned int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
-unsigned int temp_reg[TEMP_REG_COUNT];		/* Number of Temporary Registers = 16 */
+ int memory[MEMORY_SIZE];	/* Total Memory size = 2048 bytes */
+ int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
+ int temp_reg[TEMP_REG_COUNT];		/* Number of Temporary Registers = 16 */
 enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P};
-unsigned int src=0, dest=0,inti=0;	/* Index for source and destination registers */
-unsigned int opcode = 0;	
-unsigned int offset=0;
+ int src=0, dest=0,inti=0;	/* Index for source and destination registers */
+ int opcode = 0;	
+ int offset=0;
 int i = 0;
 char *destreg = NULL, *srcreg = NULL,*basereg = NULL, *indexreg = NULL,*intreg = NULL;
 bool flags[4]={ false };	/* flag register for setting various flags*/
@@ -39,10 +39,10 @@ bool flags[4]={ false };	/* flag register for setting various flags*/
  *  */
 
 /* Program Counter */
-unsigned int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
+ int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
 
 /* Stack Pointer */
-unsigned int sp = MEMORY_SIZE-1;
+ int sp = MEMORY_SIZE-1;
 char *p1 = NULL;
 int address,part_address,result;
 
@@ -58,8 +58,7 @@ int sub(int inti, int src);
 int mul(int inti, int src);
 int division(int inti, int src);
 int mod(int inti, int src);
-
-
+int rem =0;
 
 void init_memory( )
 {
@@ -68,7 +67,8 @@ void init_memory( )
  	{
  		memory[i] = 0;		
 	}
-	memory[1144]=1230;	/* Initialized 1070th Memory location to 100. For testing. */ 
+	memory[1144]=4;	
+	memory[1148]=8;/* Initialized 1070th Memory location to 100. For testing. */ 
 }
 
 
@@ -144,36 +144,41 @@ bool alu_operations(){
 		}
 	printf("Dest = %s\tIntr Reg = %s\tSrc reg = %s\n",destreg,intreg,srcreg);
 	if (strcasecmp(p1, "ADD")==0) {
-		reg[dest] = add(inti,src);
+		reg[dest] = add(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();			
 	}
 		/************************SUBTRACTION***************************/
 		else if(strcasecmp(p1, "SUB")==0)
 		{		
-		reg[dest] = sub(inti,src);
+		reg[dest] = sub(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		 print_values();		
 		}
 		/************************MULTIPLICATION***************************/
 		else if(strcasecmp(p1, "MUL")==0)
 		{
-		reg[dest] = mul(inti,src);
+		reg[dest] = mul(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();
 		}
 		/************************DIVISION***************************/
 		else if(strcasecmp(p1, "DIV")==0)
 		{	
-		reg[dest] = division(inti,src);
+		reg[dest] = division(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();
 		}
 		/************************MOD***************************/
 		else if(strcasecmp(p1, "MOD")==0)
 		{
-		reg[dest] = mod(inti,src);
+		reg[dest] = mod(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
 		print_values();
 	}
 	return true;
@@ -185,75 +190,66 @@ int add(int inti, int src){
 	//inti =  memory[pc+2];
 	//src = memory[pc+3];
 	int carry;
-	temp_reg[0] = reg[src];
-	temp_reg[1] = reg[inti];
+	temp_reg[0] = src;
+	temp_reg[1] = inti;
 	while(temp_reg[0]!=0){
 		carry = temp_reg[1] & temp_reg[0];
 		temp_reg[1] = temp_reg[1] ^ temp_reg[0];
 		temp_reg[0] = carry << 1;	
 	}
-	//reg[dest] = temp_reg[1];
-	//printf("reg[dest] = %d\n",reg[dest]);
-	//pc = pc+4;
 	return temp_reg[1];
 }
 /*****************************************SUBTRACTION FUNCTION*****************************************/
 int sub(int inti, int src){
 	printf("Performing Subtraction \n");	
-	temp_reg[0] = reg[src];
-	temp_reg[1] = reg[inti]; //2'S compliment
-	printf("temp reg before 2's compliment %d \n",temp_reg[1]);
-	temp_reg[1] = add(~temp_reg[1], 1);
-	printf("temp reg after 2's compliment %d \n",temp_reg[1]);
-	temp_reg[1] = add(temp_reg[1], temp_reg[0]);
-	return temp_reg[1];
+	temp_reg[4] = src;
+	temp_reg[5] = inti; //2'S compliment
+	temp_reg[4] = add(~temp_reg[4], 1);
+	temp_reg[4] = add(temp_reg[4], temp_reg[5]);
+	return temp_reg[4];
 }
 
 /*****************************************MULTIPLICATION FUNCTION*****************************************/
 int mul(int inti, int src){
 	printf("Performing Multiplication Operation\n");
 	int result = 0;
-	temp_reg[0] = reg[src];
-	temp_reg[1] = reg[inti];
-	while (temp_reg[0] != 0)
+	temp_reg[2] = src;
+	temp_reg[3] = inti;
+	while (temp_reg[2] != 0)
 	{
-	printf("value of the temp 0: %d \n",temp_reg[0]);
-		printf("value of the temp 1: %d \n",temp_reg[1]);
-		if (temp_reg[0] & 1)
+		if ((temp_reg[2] & 01) != 0)
 		{
-		result = add(result,temp_reg[1]);
+		result = add(result,temp_reg[3]);
 		}
-	temp_reg[1] <<= 1;
-		printf("value of the temp 0 after shift: %d \n",temp_reg[0]);
-	temp_reg[0] >>= 1;
-	printf("value of the temp 1 after shift: %d \n",temp_reg[1]);
+	temp_reg[3] <<= 1;
+	temp_reg[2] >>= 1;
 	}
-	return(result);
+	return result;
 }
 
 /*****************************************DIVISION FUNCTION*****************************************/
 int division(int inti, int src){
 	//printf("Performing Division");
-	temp_reg[0] = reg[src];
-	temp_reg[1] = reg[inti];
+	temp_reg[5] = inti;
+	temp_reg[6] = src;
 	int   result = 0 ,sign = 0;        
-  if (temp_reg[0]< 0 )
+  if (temp_reg[5]< 0 )
   {          
-    temp_reg[0]=-temp_reg[0];          
+    temp_reg[5]=-temp_reg[5];          
     sign ^= 1;      
   }             
-  if (temp_reg[1]< 0 )
+  if (temp_reg[6]< 0 )
   {          
-    temp_reg[1]=-temp_reg[1];          
+    temp_reg[6]=-temp_reg[6];          
     sign ^= 1;      
   }        
-  if (temp_reg[1]!= 0 )
+  if (temp_reg[6]!= 0 )
   {   
-    printf("dividng");             
-    while (temp_reg[0]>=temp_reg[1])
+    printf("dividing");             
+    while (temp_reg[5]>=temp_reg[6])
 	{              
-      temp_reg[0] = sub(temp_reg[0],temp_reg[1]);  	    
-	  printf("temp_reg[0] afteR sub %d",temp_reg[0]); 
+      temp_reg[5] = sub(temp_reg[5],temp_reg[6]);  	    
+	  printf("temp_reg[5] afteR sub %d",temp_reg[5]); 
       result++;          
     }      
   }     
@@ -263,30 +259,31 @@ int division(int inti, int src){
     result=-result;      
     
   }
-  printf(" Remainder = %d \n",temp_reg[0]);   
+  printf(" rem = %d \n",temp_reg[0]);   
   return   result; 
 }
+
 /*****************************************MOD FUNCTION*****************************************/
 int mod(int inti, int src){
-temp_reg[0] = reg[src];
-temp_reg[1] = reg[inti];
+temp_reg[7] = inti;
+temp_reg[8] = src;
 int   c= 0 ,sign = 0;        
-  if (temp_reg[0]< 0 )
+  if (temp_reg[7]< 0 )
   {          
-    temp_reg[0]=-temp_reg[0];          
+    temp_reg[7]=-temp_reg[7];          
     sign ^= 1;      
   }             
-  if (temp_reg[1]< 0 )
+  if (temp_reg[8]< 0 )
   {          
-    temp_reg[1]=-temp_reg[1];          
+    temp_reg[8]=-temp_reg[8];          
     sign ^= 1;      
   }        
-  if (temp_reg[1]!= 0 )
+  if (temp_reg[8]!= 0 )
   {   
               
-    while (temp_reg[0]>=temp_reg[1])
+    while (temp_reg[7]>=temp_reg[8])
 	{              
-    temp_reg[0] = sub(temp_reg[0],temp_reg[1]);  	    
+    temp_reg[7] = sub(temp_reg[7],temp_reg[8]);  	    
 	  
       c++;          
     }      
@@ -297,7 +294,7 @@ int   c= 0 ,sign = 0;
     c=-c;      
     
   }
-  return temp_reg[0];
+  return temp_reg[7];
   }
 
 
@@ -552,6 +549,8 @@ int main(){
 	init_memory();
 	reg[0] = 1024;	/*Initialized Reg A = 1024 */
 	reg[1] = 30;	/*Initialized Reg B = 1024 */
+	reg[2] =40;
+	reg[3] =6;
 	result = print_values();
 	while(pc < MEMORY_SIZE){
 		while(res == true){
