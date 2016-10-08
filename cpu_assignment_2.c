@@ -31,17 +31,11 @@ unsigned int opcode = 0;
 unsigned int offset=0;
 int i = 0;
 char *destreg = NULL, *srcreg = NULL,*basereg = NULL, *indexreg = NULL,*intreg = NULL;
-bool flags[16]={ false };	/* flag register for setting various flags*/
-/*Carry Flag = flags[0]
- * Parity Flag = flags[2]
- * Auxiliary Carry Flag = flags[4]
- * Zero Flag = flags[6]
- * Sign Flag = flags[7]
- * Trap Flag = flags[8]
- * Interrupt Flag = flags[9]
- * Direction flag = flags[10]
- * Overflow flag = flags[11]
- * All Others are reserved
+bool flags[4]={ false };	/* flag register for setting various flags*/
+/*Carry Flag = flags[0] 
+ * Zero Flag = flags[1]
+ * Sign Flag = flags[2]
+ * Overflow flag = flags[3] 
  *  */
 
 /* Program Counter */
@@ -59,7 +53,12 @@ void init_memory();
 int execute_load();
 int execute_store();
 int print_values();
-int add();
+int add(int inti, int src);
+int sub(int inti, int src);
+int mul(int inti, int src);
+int division(int inti, int src);
+int mod(int inti, int src);
+
 
 
 void init_memory( )
@@ -98,14 +97,9 @@ int print_values(){
 
 	printf("*****************Value of Flag Register******************\n");
 	printf("Carry Flag = %d\t",flags[0]);
-	printf("Parity Flag = %d\t",flags[2]);
-	printf("Auxiliary Flag = %d\t",flags[4]);
-	printf("Zero Flag = %d\t",flags[6]);
-	printf("Sign Flag = %d\t",flags[7]);
-	printf("Trap Flag = %d\t",flags[8]);
-	printf("Interrupt Flag = %d\t",flags[9]);
-	printf("Direction Flag = %d\t",flags[10]);
-	printf("Overflow Flag = %d\n",flags[11]);
+	printf("Zero Flag = %d\t",flags[1]);
+	printf("Sign Flag = %d\t",flags[2]);
+	printf("Overflow Flag = %d\n",flags[3]);
 
 	printf("*****************Value of Stack Pointer******************\n");
 	printf("Stack Pointer(dec):%d\n",sp);
@@ -116,6 +110,10 @@ int print_values(){
 
 bool alu_operations(){
 	printf("1. Format for ADD operation: ADD dest_reg,src_reg1,src_reg2 Eg: ADD rd,r1,r2 \n");
+	printf("2. Format for SUB operation: SUB dest_reg,src_reg1,src_reg2 Eg: SUB rd,r1,r2 \n");
+	printf("3. Format for MUL operation: MUL dest_reg,src_reg1,src_reg2 Eg: MUL rd,r1,r2 \n");
+	printf("4. Format for DIV operation: DIV dest_reg,src_reg1,src_reg2 Eg: DIV rd,r1,r2 \n");
+	printf("5. Format for MOD operation: MOD dest_reg,src_reg1,src_reg2 Eg: MOD rd,r1,r2 \n");
 	char instruction[20];
 	int len;
 	char *p2 = NULL;
@@ -146,25 +144,46 @@ bool alu_operations(){
 		}
 	printf("Dest = %s\tIntr Reg = %s\tSrc reg = %s\n",destreg,intreg,srcreg);
 	if (strcasecmp(p1, "ADD")==0) {
-		memory[INSTR_MEMORY_BASE_ADD + i] = opcode;
-		memory[INSTR_MEMORY_BASE_ADD + i+1] = dest;
-		memory[INSTR_MEMORY_BASE_ADD + i+2] = inti; 
-		memory[INSTR_MEMORY_BASE_ADD + i+3] = src; 
-		i = i+4;
-		result = add();
-		result = print_values();
-		if (result !=0){
-			printf("Error in printing values \n");
-			return false;
-		}	
+		reg[dest] = add(inti,src);
+		printf("Result %d\n", reg[dest]);
+		print_values();			
+	}
+		/************************SUBTRACTION***************************/
+		else if(strcasecmp(p1, "SUB")==0)
+		{		
+		reg[dest] = sub(inti,src);
+		printf("Result %d\n", reg[dest]);
+		 print_values();		
+		}
+		/************************MULTIPLICATION***************************/
+		else if(strcasecmp(p1, "MUL")==0)
+		{
+		reg[dest] = mul(inti,src);
+		printf("Result %d\n", reg[dest]);
+		print_values();
+		}
+		/************************DIVISION***************************/
+		else if(strcasecmp(p1, "DIV")==0)
+		{	
+		reg[dest] = division(inti,src);
+		printf("Result %d\n", reg[dest]);
+		print_values();
+		}
+		/************************MOD***************************/
+		else if(strcasecmp(p1, "MOD")==0)
+		{
+		reg[dest] = mod(inti,src);
+		printf("Result %d\n", reg[dest]);
+		print_values();
 	}
 	return true;
 }
-int add(){
-	opcode = memory[pc];
-	dest = memory[pc+1];
-	inti =  memory[pc+2];
-	src = memory[pc+3];
+/*****************************************ADDITION FUNCTION*****************************************/
+int add(int inti, int src){
+	//opcode = memory[pc];
+	//dest = memory[pc+1];
+	//inti =  memory[pc+2];
+	//src = memory[pc+3];
 	int carry;
 	temp_reg[0] = reg[src];
 	temp_reg[1] = reg[inti];
@@ -173,12 +192,111 @@ int add(){
 		temp_reg[1] = temp_reg[1] ^ temp_reg[0];
 		temp_reg[0] = carry << 1;	
 	}
-	reg[dest] = temp_reg[1];
-	printf("reg[dest] = %d\n",reg[dest]);
-	pc = pc+4;
-	return 0;
+	//reg[dest] = temp_reg[1];
+	//printf("reg[dest] = %d\n",reg[dest]);
+	//pc = pc+4;
+	return temp_reg[1];
+}
+/*****************************************SUBTRACTION FUNCTION*****************************************/
+int sub(int inti, int src){
+	int carry;
+	printf("Performing Subtraction");	
+	temp_reg[0] = reg[src];
+	temp_reg[1] = reg[inti];
+	temp_reg[1] = add(~temp_reg[1], 1);
+	temp_reg[1] = add(temp_reg[1], temp_reg[0]);
+	return temp_reg[1];
 }
 
+/*****************************************MULTIPLICATION FUNCTION*****************************************/
+int mul(int inti, int src){
+	printf("Performing Multiplication Operation\n");
+	int result = 0;
+	temp_reg[0] = reg[src];
+	temp_reg[1] = reg[inti];
+	while (temp_reg[0] != 0)
+	{
+	if (temp_reg[0] & 1)
+	{
+		result = add(result,temp_reg[1]);
+	}
+	temp_reg[1] <<= 1;
+	temp_reg[0] >>= 1;
+	}
+	return(result);
+}
+
+/*****************************************DIVISION FUNCTION*****************************************/
+int division(int inti, int src){
+	//printf("Performing Division");
+	temp_reg[0] = reg[src];
+	temp_reg[1] = reg[inti];
+	int   result = 0 ,sign = 0;        
+  if (temp_reg[0]< 0 )
+  {          
+    temp_reg[0]=-temp_reg[0];          
+    sign ^= 1;      
+  }             
+  if (temp_reg[1]< 0 )
+  {          
+    temp_reg[1]=-temp_reg[1];          
+    sign ^= 1;      
+  }        
+  if (temp_reg[1]!= 0 )
+  {   
+    printf("dividng");             
+    while (temp_reg[0]>=temp_reg[1])
+	{              
+      temp_reg[0] = sub(temp_reg[0],temp_reg[1]);  	    
+	  printf("temp_reg[0] afteR sub %d",temp_reg[0]); 
+      result++;          
+    }      
+  }     
+   
+  if (sign)
+  {         
+    result=-result;      
+    
+  }
+  printf(" Remainder = %d \n",temp_reg[0]);   
+  return   result; 
+}
+/*****************************************MOD FUNCTION*****************************************/
+int mod(int inti, int src){
+temp_reg[0] = reg[src];
+temp_reg[1] = reg[inti];
+int   c= 0 ,sign = 0;        
+  if (temp_reg[0]< 0 )
+  {          
+    temp_reg[0]=-temp_reg[0];          
+    sign ^= 1;      
+  }             
+  if (temp_reg[1]< 0 )
+  {          
+    temp_reg[1]=-temp_reg[1];          
+    sign ^= 1;      
+  }        
+  if (temp_reg[1]!= 0 )
+  {   
+              
+    while (temp_reg[0]>=temp_reg[1])
+	{              
+    temp_reg[0] = sub(temp_reg[0],temp_reg[1]);  	    
+	  
+      c++;          
+    }      
+  }     
+   
+  if (sign)
+  {         
+    c=-c;      
+    
+  }
+  return temp_reg[0];
+  }
+
+
+/*****************************************LOAD AND STORE FUNCTION*****************************************/
 bool load_and_store(){
 	printf("1. Format for LOAD operation: LOAD dest_reg,offset(src_reg) Eg: LOAD A,30(RB,RI,4) \n");
 	printf("2 .Format for STORE opcode: STORE dest_reg,offset(src_reg) Eg: STORE A,30(B) \n"); 
