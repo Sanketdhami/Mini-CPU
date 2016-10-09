@@ -1,9 +1,9 @@
 /* ******************************************************************************************************
     PROGRAM NAME: cpu_setup.c
     OBJECTIVE: Develop Best CPU.
-    DESCRIPTION: Setup CPU architecture with LOAD and STORE data and ALU operations. 
+    DESCRIPTION: Setup CPU architecture with LOAD and STORE data and ALU operations and FLAGS. 
     TEAM MEMBERS: Sanket Dhami, Karthik Sadanand, Ramyashree, Neha Rege
-    DATE: 24th Sep, 2016
+    DATE: 8th Oct, 2016
    ****************************************************************************************************** */
   
 #include <stdio.h>
@@ -60,6 +60,16 @@ int division(int inti, int src);
 int mod(int inti, int src);
 int rem =0;
 
+
+/***************Function pointers*******/
+
+int (*fun_ptr_add)(int, int) = &add;
+int (*fun_ptr_sub)(int, int) = &sub;
+int (*fun_ptr_mul)(int, int) = &mul;
+int (*fun_ptr_division)(int, int) = &division;
+int (*fun_ptr_mod)(int, int) = &mod;
+
+
 void init_memory( )
 {
 	int i;
@@ -67,8 +77,8 @@ void init_memory( )
  	{
  		memory[i] = 0;		
 	}
-	memory[1144]=4;	
-	memory[1148]=8;/* Initialized 1070th Memory location to 100. For testing. */ 
+	memory[1144]=4;/** Initialized 1144th Memory location to 4. For testing. */ 	
+	memory[1148]=8;/* Initialized 1148th Memory location to 8. For testing. */ 
 }
 
 
@@ -100,6 +110,12 @@ int print_values(){
 	printf("Zero Flag = %d\t",flags[1]);
 	printf("Sign Flag = %d\t",flags[2]);
 	printf("Overflow Flag = %d\n",flags[3]);
+	if(flags[0] == true){
+		printf("WARNING: Carry Flag is generated\n");
+	}
+	if(flags[3] == true){
+		printf("WARNING: Overflow flag is generated\n");
+	}
 
 	printf("*****************Value of Stack Pointer******************\n");
 	printf("Stack Pointer(dec):%d\n",sp);
@@ -124,27 +140,28 @@ bool alu_operations(){
 	p2 = strtok(NULL," ");
 	destreg = strtok(p2,",");
 	dest = destreg[0]-'A';
-	if(dest >= P){
+	if(dest > P){
 			printf("Destination register should be from Register A-P \n");
 			return false;
 		}
 	p2 = strtok(NULL," ");
 	intreg = strtok(p2,",");
 	inti = intreg[0]-'A';
-	if(inti >= P){
+	if(inti > P){
 			printf("Intermediate register should be from Register A-P \n");
 			return false;
 		}
 	p2 = strtok(NULL," ");
 	srcreg = strtok(p2,",");
 	src = srcreg[0]-'A';
-	if(src >= P){
+	if(src > P){
 			printf("Source register should be from Register A-P \n");
 			return false;
 		}
 	printf("Dest = %s\tIntr Reg = %s\tSrc reg = %s\n",destreg,intreg,srcreg);
+	/*****************************ADDITION**************************/
 	if (strcasecmp(p1, "ADD")==0) {
-		reg[dest] = add(reg[inti],reg[src]);
+		reg[dest] = (*fun_ptr_add)(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
 		pc = pc + 4;
 		print_values();			
@@ -152,7 +169,7 @@ bool alu_operations(){
 		/************************SUBTRACTION***************************/
 		else if(strcasecmp(p1, "SUB")==0)
 		{		
-		reg[dest] = sub(reg[inti],reg[src]);
+		reg[dest] = (*fun_ptr_sub)(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
 		pc = pc + 4;
 		 print_values();		
@@ -160,7 +177,7 @@ bool alu_operations(){
 		/************************MULTIPLICATION***************************/
 		else if(strcasecmp(p1, "MUL")==0)
 		{
-		reg[dest] = mul(reg[inti],reg[src]);
+		reg[dest] = (*fun_ptr_mul)(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
 		pc = pc + 4;
 		print_values();
@@ -168,7 +185,7 @@ bool alu_operations(){
 		/************************DIVISION***************************/
 		else if(strcasecmp(p1, "DIV")==0)
 		{	
-		reg[dest] = division(reg[inti],reg[src]);
+		reg[dest] = (*fun_ptr_division)(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
 		pc = pc + 4;
 		print_values();
@@ -176,7 +193,7 @@ bool alu_operations(){
 		/************************MOD***************************/
 		else if(strcasecmp(p1, "MOD")==0)
 		{
-		reg[dest] = mod(reg[inti],reg[src]);
+		reg[dest] = (*fun_ptr_mod)(reg[inti],reg[src]);
 		printf("Result %d\n", reg[dest]);
 		pc = pc + 4;
 		print_values();
@@ -197,15 +214,40 @@ int add(int inti, int src){
 		temp_reg[1] = temp_reg[1] ^ temp_reg[0];
 		temp_reg[0] = carry << 1;	
 	}
+	
+	if((src>=0 && inti>=0 && temp_reg[1]<0) || (src<0 && inti<0 && temp_reg[1]>0)){  //Overflow criteria
+		flags[3] = true; 
+	}
+	else{
+		flags[3] = false;
+	}
+	if(carry == 1){      //Carry Criteria
+		flags[0] = true;
+	}
+	else{
+		flags[0] = false;
+	}
+	if(temp_reg[1]<0){    //Sign Flag criteria
+		flags[2] = true;
+	}
+	else{
+		flags[2] = false;
+	}
+	if(temp_reg[1]==0){    //Zero Flag criteria
+		flags[1] = true;
+	}
+	else{
+		flags[1] = false;
+	}
 	return temp_reg[1];
 }
 /*****************************************SUBTRACTION FUNCTION*****************************************/
 int sub(int inti, int src){
 	printf("Performing Subtraction \n");	
 	temp_reg[4] = src;
-	temp_reg[5] = inti; //2'S compliment
-	temp_reg[4] = add(~temp_reg[4], 1);
-	temp_reg[4] = add(temp_reg[4], temp_reg[5]);
+	temp_reg[5] = inti; //2'S complement
+	temp_reg[4] = (*fun_ptr_add)(~temp_reg[4], 1);
+	temp_reg[4] = (*fun_ptr_add)(temp_reg[4], temp_reg[5]);
 	return temp_reg[4];
 }
 
@@ -219,7 +261,7 @@ int mul(int inti, int src){
 	{
 		if ((temp_reg[2] & 01) != 0)
 		{
-		result = add(result,temp_reg[3]);
+		result = (*fun_ptr_add)(result,temp_reg[3]);
 		}
 	temp_reg[3] <<= 1;
 	temp_reg[2] >>= 1;
@@ -248,7 +290,7 @@ int division(int inti, int src){
     printf("dividing");             
     while (temp_reg[5]>=temp_reg[6])
 	{              
-      temp_reg[5] = sub(temp_reg[5],temp_reg[6]);  	    
+      temp_reg[5] = (*fun_ptr_sub)(temp_reg[5],temp_reg[6]);  	    
 	  printf("temp_reg[5] afteR sub %d",temp_reg[5]); 
       result++;          
     }      
@@ -259,6 +301,18 @@ int division(int inti, int src){
     result=-result;      
     
   }
+  	if(result < 0){    //Sign Flag criteria
+		flags[2] = true;
+	}
+	else{
+		flags[2] = false;
+	}
+	if(result == 0){    //Zero Flag criteria
+		flags[1] = true;
+	}
+	else{
+		flags[1] = false;
+	}
   printf(" rem = %d \n",temp_reg[0]);   
   return   result; 
 }
@@ -283,7 +337,7 @@ int   c= 0 ,sign = 0;
               
     while (temp_reg[7]>=temp_reg[8])
 	{              
-    temp_reg[7] = sub(temp_reg[7],temp_reg[8]);  	    
+    temp_reg[7] = (*fun_ptr_sub)(temp_reg[7],temp_reg[8]);  	    
 	  
       c++;          
     }      
@@ -314,7 +368,7 @@ bool load_and_store(){
 		destreg = strtok(p2,",");
 //			printf("DESTreg = %s\n",destreg);
 		dest = destreg[0] - 'A';      /*Index for Destination register*/
-		if(dest >= P){
+		if(dest > P){
 			printf("Destination registers should be from Register A-P \n");
 			return false;
 		}	      
@@ -350,7 +404,7 @@ bool load_and_store(){
 		else{
 			basereg = p4;
 			base = basereg[0] - 'A';     /*Index for source register*/
-			if(base >= P){
+			if(base > P){
 				printf("Base registers should be from Register A-P \n");
 				return false;	
 			}
@@ -365,7 +419,7 @@ bool load_and_store(){
 		}
 		else{
 			index = indexreg[0] - 'A';     /*Index for source register*/
-			if(index >= P){
+			if(index > P){
 				printf("Index registers should be from Register A-P \n");
 				return false;
 			}
@@ -402,7 +456,7 @@ bool load_and_store(){
 		p2 = strtok(NULL," ");
 	     	srcreg = strtok(p2,",");
 		src = srcreg[0] - 'A';      /*Index for Destination register*/
-		if(src >= P){
+		if(src > P){
 			printf("Destination registers should be from Register A-Q \n");
 			return false;
 		}
@@ -438,7 +492,7 @@ bool load_and_store(){
 		else{
 			basereg = p4;
 			base = basereg[0] - 'A';     /*Index for source register*/
-			if(base >= P){
+			if(base > P){
 				printf("Base registers should be from Register A-P \n");
 				return false;	
 			}
@@ -453,7 +507,7 @@ bool load_and_store(){
 		}
 		else{
 			index = indexreg[0] - 'A';     /*Index for source register*/
-			if(index >= P){
+			if(index > P){
 				printf("Index registers should be from Register A-P \n");
 				return false;
 			}
@@ -549,8 +603,10 @@ int main(){
 	init_memory();
 	reg[0] = 1024;	/*Initialized Reg A = 1024 */
 	reg[1] = 30;	/*Initialized Reg B = 1024 */
-	reg[2] =40;
-	reg[3] =6;
+	reg[2] =-103;
+	reg[3] =-69;
+	reg[4] = 2147483647;
+	reg[5] = 100;
 	result = print_values();
 	while(pc < MEMORY_SIZE){
 		while(res == true){
