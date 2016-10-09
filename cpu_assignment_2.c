@@ -1,7 +1,7 @@
 /* ******************************************************************************************************
     PROGRAM NAME: cpu_setup.c
     OBJECTIVE: Develop Best CPU.
-    DESCRIPTION: Setup CPU architecture with LOAD and STORE data and ALU operations. 
+    DESCRIPTION: Setup CPU architecture with LOAD and STORE data and ALU operations and FLAGS. 
     TEAM MEMBERS: Sanket Dhami, Karthik Sadanand, Ramyashree, Neha Rege
     DATE: 8th Oct, 2016
    ****************************************************************************************************** */
@@ -70,11 +70,6 @@ int (*fun_ptr_division)(int, int) = &division;
 int (*fun_ptr_mod)(int, int) = &mod;
 
 
-
-
-
-
-
 void init_memory( )
 {
 	int i;
@@ -82,8 +77,8 @@ void init_memory( )
  	{
  		memory[i] = 0;		
 	}
-	memory[1144]=4;	
-	memory[1148]=8;/* Initialized 1070th Memory location to 100. For testing. */ 
+	memory[1144]=4;/** Initialized 1144th Memory location to 4. For testing. */ 	
+	memory[1148]=8;/* Initialized 1148th Memory location to 8. For testing. */ 
 }
 
 
