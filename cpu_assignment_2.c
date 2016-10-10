@@ -397,29 +397,29 @@ bool load_and_store(){
 	if (strcasecmp(p1, "LOAD")==0) {
 		opcode = LOAD_OPCODE;
 		p2 = strtok(NULL," ");
-//			printf("p2 = %s\n",p2);          		
+       		
 		destreg = strtok(p2,",");
-//			printf("DESTreg = %s\n",destreg);
+
 		dest = destreg[0] - 'A';      /*Index for Destination register*/
 		if(dest > P){
 			printf("Destination registers should be from Register A-P \n");
 			return false;
 		}	      
               	p2 = strtok(NULL,"");
-//			printf("p2 = %s\n",p2);
+
 	      		
 		p2 = strtok(p2,"(");
-//			printf("p2 = %s\n",p2); 			
+			
 		if(p2==NULL){
 			offset = 0;
 		}
 		else{
 			offset = atoi(p2);
 		}
-//			printf("offset = %d\n",offset);
+
 
 		p3 = strtok(NULL,"(");
-//			printf("p3 BEFORE = %s\n",p3);
+
 		if(p3 == NULL){
 			if(p2==NULL){
 
@@ -428,9 +428,9 @@ bool load_and_store(){
 				p3=p2;
 			}
 		}
-//			printf("p3 AFTER= %s\n",p3);
+
 		p4 =strtok(p3,",)");
-//			printf("%s\n",p4);
+
 		if(p4 == NULL){
 			basereg = NULL;
 		}
@@ -442,11 +442,10 @@ bool load_and_store(){
 				return false;	
 			}
 		}			
-//			printf("basereg = %s\n",basereg);
+
 		p2 = strtok(NULL,"");
-//			printf("p2 = %s\n",p2);
-		indexreg =  strtok(p2,",)");
-//			printf("indexreg = %s\n",indexreg);
+
+
 		if(indexreg == NULL){
 				
 		}
@@ -458,15 +457,20 @@ bool load_and_store(){
 			}
 		}			
 		p2 = strtok(NULL,")");
-//			printf("p2 = %s\n",p2);
+
 		if(p2==NULL){
 			s = 0;
 		}
 		else{
 			s = atoi(strtok(p2,")"));
 		}
-		//printf("s = %d\n",s);
-		//printf("reg[base] = %d\treg[index] = %d\ts = %d\n",reg[base],reg[index],s);
+		if(s==1 || s==2 || s==4 || s==8){
+		}
+		else{
+			printf("S should be 1,2,4 or 8\n");
+			exit(0);
+		}
+
 		part_address = reg[base]+s*reg[index];
 		memory[INSTR_MEMORY_BASE_ADD + i] = opcode;
 		memory[INSTR_MEMORY_BASE_ADD + i+1] = dest;
@@ -494,20 +498,20 @@ bool load_and_store(){
 			return false;
 		}
 		p2 = strtok(NULL,"");
-//			printf("p2 = %s\n",p2);
+
 	      		
 		p2 = strtok(p2,"(");
-//		printf("p2 = %s\n",p2); 			
+			
 		if(p2==NULL){
 			offset = 0;
 		}
 		else{
 			offset = atoi(p2);
 		}
-//			printf("offset = %d\n",offset);
+
 
 	        p3 = strtok(NULL,"(");
-//			printf("p3 BEFORE = %s\n",p3);
+
 		if(p3 == NULL){
 			if(p2==NULL){
 
@@ -516,9 +520,9 @@ bool load_and_store(){
 				p3=p2;
 			}
 		}
-//			printf("p3 AFTER= %s\n",p3);
+
 		p4 =strtok(p3,",)");
-//			printf("%s\n",p4);
+
 		if(p4 == NULL){
 			basereg = NULL;
 		}
@@ -530,11 +534,11 @@ bool load_and_store(){
 				return false;	
 			}
 		}			
-//			printf("basereg = %s\n",basereg);
+
 		p2 = strtok(NULL,"");
-//			printf("p2 = %s\n",p2);
+
 		indexreg =  strtok(p2,",)");
-//			printf("indexreg = %s\n",indexreg);
+
 		if(indexreg == NULL){
 				
 		}
@@ -546,15 +550,20 @@ bool load_and_store(){
 			}
 		}			
 		p2 = strtok(NULL,")");
-//			printf("p2 = %s\n",p2);
+
 		if(p2==NULL){
 			s = 0;
 		}
 		else{
 			s = atoi(strtok(p2,")"));
 		}
-//			printf("s = %d\n",s);
-//			printf("reg[base] = %d\treg[index] = %d\ts = %d\n",reg[base],reg[index],s);
+		if(s==1 || s==2 || s==4 || s==8){
+		}
+		else{
+			printf("S should be 1,2,4 or 8\n");
+			exit(0);
+		}
+
 		part_address = reg[base]+s*reg[index];
 		memory[INSTR_MEMORY_BASE_ADD + i] = opcode;
 		memory[INSTR_MEMORY_BASE_ADD + i+1] = src;
@@ -666,7 +675,6 @@ int main(){
 			}
 
 		}
-
-	//	printf("\nDone\n");	
+	
 	}
 }
