@@ -124,6 +124,11 @@ int print_values(){
 	return 0;
 }
 
+/*********************************************************************************************/
+Simple Function which calls the respective instruction. A function pointer is implemented 
+to point the functions like add, sub, mul, division and mod.
+/********************************************************************************************/
+
 bool alu_operations(){
 	printf("1. Format for ADD operation: ADD dest_reg,src_reg1,src_reg2 Eg: ADD rd,r1,r2 \n");
 	printf("2. Format for SUB operation: SUB dest_reg,src_reg1,src_reg2 Eg: SUB rd,r1,r2 \n");
@@ -200,7 +205,14 @@ bool alu_operations(){
 	}
 	return true;
 }
+
+
 /*****************************************ADDITION FUNCTION*****************************************/
+This function adds the content of inti and src and returns the value. The returned value is stored in 
+destination register. All operations in the add function are bitwise operations.Thus making it a 3 
+operand instruction. Also, flags like sign flag, carry flag, overflow flag and zero flag is implemented. 
+/**************************************************************************************************/
+
 int add(int inti, int src){
 	//opcode = memory[pc];
 	//dest = memory[pc+1];
@@ -241,7 +253,14 @@ int add(int inti, int src){
 	}
 	return temp_reg[1];
 }
+
+
+
 /*****************************************SUBTRACTION FUNCTION*****************************************/
+This substracts the content of inti and src and returns the value. The returned value is stored in 
+destination register. Thus making it a 3 operand instruction. Basically it performs 2's complement 
+of the negative number and calls the addition function.
+/******************************************************************************************************/
 int sub(int inti, int src){
 	printf("Performing Subtraction \n");	
 	temp_reg[4] = src;
@@ -251,7 +270,14 @@ int sub(int inti, int src){
 	return temp_reg[4];
 }
 
+
+
 /*****************************************MULTIPLICATION FUNCTION*****************************************/
+This function multiplies the content of inti and src and returns the value. The returned value is stored in 
+destination register. Thus making it a 3 operand instruction. Primarily, with the help of logical left shift, 
+multiplication instruction is carried out.
+
+/*********************************************************************************************************/
 int mul(int inti, int src){
 	printf("Performing Multiplication Operation\n");
 	int result = 0;
@@ -270,6 +296,10 @@ int mul(int inti, int src){
 }
 
 /*****************************************DIVISION FUNCTION*****************************************/
+This function divides the content of inti with src and returns the value. The returned value is stored in 
+destination register. Thus making it a 3 operand instruction. 
+
+/***************************************************************************************************/
 int division(int inti, int src){
 	//printf("Performing Division");
 	temp_reg[5] = inti;
@@ -318,6 +348,10 @@ int division(int inti, int src){
 }
 
 /*****************************************MOD FUNCTION*****************************************/
+This function performs modulus operation on the content of inti with src and returns the value. 
+The returned value is stored in destination register. Thus making it a 3 operand instruction. 
+
+/**********************************************************************************************/
 int mod(int inti, int src){
 temp_reg[7] = inti;
 temp_reg[8] = src;
