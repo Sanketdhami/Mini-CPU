@@ -21,6 +21,8 @@
 
 #define STORE_OPCODE 3		/* Opcode for STORE instruction */
 #define LOAD_OPCODE 4		/* Opcode for LOAD instruction */
+/******add opcodes*****************************************************************************************************/
+
 
  int memory[MEMORY_SIZE];	/* Total Memory size = 2048 bytes */
  int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
@@ -30,6 +32,7 @@ enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P};
  int opcode = 0;	
  int offset=0;
 int i = 0;
+
 char *destreg = NULL, *srcreg = NULL,*basereg = NULL, *indexreg = NULL,*intreg = NULL;
 bool flags[4]={ false };	/* flag register for setting various flags*/
 /*Carry Flag = flags[0] 
@@ -68,6 +71,7 @@ int (*fun_ptr_sub)(int, int) = &sub;
 int (*fun_ptr_mul)(int, int) = &mul;
 int (*fun_ptr_division)(int, int) = &division;
 int (*fun_ptr_mod)(int, int) = &mod;
+
 
 
 void init_memory( )
@@ -123,7 +127,145 @@ int print_values(){
 	printf("\n\n\n");
 	return 0;
 }
+/********************************************************************************************
 
+
+**********************************************************************************************/
+bool cond_codes(){
+	printf("1. Format for SETS operation: SETS dest Eg: SETS A\n");
+	printf("2. Format for SETNS operation: SETNS dest Eg: SETNS A\n");
+	printf("3. Format for SETL operation: SETL dest Eg: SETL A\n");	
+	printf("4. Format for SETLE operation: SETLE dest Eg: SETLE A\n");
+	printf("5. Format for SETG operation: SETG dest Eg: SETG A\n");
+	printf("6. Format for SETE operation: SETE dest Eg: SETE A\n");
+	char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	//printf("%s\n",p1);
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	dest = destreg[0]-'A';
+	if(dest > P){
+			printf("Destination register should be from Register A-P \n");
+			return false;
+		}
+	//printf("Dest = %s\n",destreg);
+/**********************************************************************************************/
+	if (strcasecmp(p1, "SETE")==0) {
+		reg[dest] = sete();
+		//printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
+		print_values();	
+		return true;		
+	}
+	else if (strcasecmp(p1, "SETS")==0) {
+		reg[dest] = sets();
+		//printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
+		print_values();	
+		return true;		
+	}
+	else if (strcasecmp(p1, "SETNS")==0) {
+		reg[dest] = setns();
+		//printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
+		print_values();
+		return true;			
+	}
+	else if (strcasecmp(p1, "SETL")==0) {
+		reg[dest] = setl();
+		//printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
+		print_values();	
+		return true;		
+	}	
+	else if (strcasecmp(p1, "SETLE")==0) {
+		reg[dest] = setle();
+		//printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
+		print_values();		
+		return true;	
+	}
+	else if (strcasecmp(p1, "SETG")==0) {
+		reg[dest] = setg();
+		//printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
+		print_values();
+		return true;			
+	}
+/*	else if (strcasecmp(p1, "COMPQ")==0) {
+		reg[dest] = compq();
+		//printf("Result %d\n", reg[dest]);
+		pc = pc + 4;
+		print_values();
+		return true;			
+	}*/
+	else{
+		return false;
+	}
+}
+
+
+int sete(){
+	if(flags[1] == true){
+
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int sets(){
+	printf("Sign Flag = %d\n",flags[2]);
+	if(flags[2] == true){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int setns(){
+	printf("Sign Flag = %d\n",flags[2]);
+	if(flags[2] == false){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int setl(){
+	if(flags[2]!=flags[3]){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int setg(){
+	if((!(flags[2]!=flags[3]))&&(!flags[1])){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int setle(){
+	if((flags[2]!=flags[3])||(flags[1])){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
 /*********************************************************************************************
 Simple Function which calls the respective instruction. A function pointer is implemented 
 to point the functions like add, sub, mul, division and mod.
@@ -165,44 +307,52 @@ bool alu_operations(){
 		}
 	printf("Dest = %s\tIntr Reg = %s\tSrc reg = %s\n",destreg,intreg,srcreg);
 	/*****************************ADDITION**************************/
-	if (strcasecmp(p1, "ADD")==0) {
-		reg[dest] = (*fun_ptr_add)(reg[inti],reg[src]);
-		printf("Result %d\n", reg[dest]);
-		pc = pc + 4;
-		print_values();			
-	}
+		if (strcasecmp(p1, "ADD")==0) {
+			reg[dest] = (*fun_ptr_add)(reg[inti],reg[src]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();	
+			return true;		
+		}
 		/************************SUBTRACTION***************************/
 		else if(strcasecmp(p1, "SUB")==0)
 		{		
-		reg[dest] = (*fun_ptr_sub)(reg[inti],reg[src]);
-		printf("Result %d\n", reg[dest]);
-		pc = pc + 4;
-		 print_values();		
+			reg[dest] = (*fun_ptr_sub)(reg[inti],reg[src]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();
+			return true;		
 		}
 		/************************MULTIPLICATION***************************/
 		else if(strcasecmp(p1, "MUL")==0)
 		{
-		reg[dest] = (*fun_ptr_mul)(reg[inti],reg[src]);
-		printf("Result %d\n", reg[dest]);
-		pc = pc + 4;
-		print_values();
+			reg[dest] = (*fun_ptr_mul)(reg[inti],reg[src]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();
+			return true;
 		}
 		/************************DIVISION***************************/
 		else if(strcasecmp(p1, "DIV")==0)
 		{	
-		reg[dest] = (*fun_ptr_division)(reg[inti],reg[src]);
-		printf("Result %d\n", reg[dest]);
-		pc = pc + 4;
-		print_values();
+			reg[dest] = (*fun_ptr_division)(reg[inti],reg[src]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();
+			return true;
 		}
 		/************************MOD***************************/
 		else if(strcasecmp(p1, "MOD")==0)
 		{
-		reg[dest] = (*fun_ptr_mod)(reg[inti],reg[src]);
-		printf("Result %d\n", reg[dest]);
-		pc = pc + 4;
-		print_values();
-	}
+			reg[dest] = (*fun_ptr_mod)(reg[inti],reg[src]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();
+			return true;
+		}
+		else{
+		return false;
+		}
 	return true;
 }
 
@@ -227,7 +377,7 @@ int add(int inti, int src){
 		temp_reg[0] = carry << 1;	
 	}
 	
-	if((src>=0 && inti>=0 && temp_reg[1]<0) || (src<0 && inti<0 && temp_reg[1]>0)){  //Overflow criteria
+	if((src>=0 && inti>=0 && temp_reg[1]<0) || (src<0 && inti<0 && temp_reg[1]>=0)){  //Overflow criteria
 		flags[3] = true; 
 	}
 	else{
@@ -656,7 +806,8 @@ int main(){
 			printf("****************Instructions Menu****************\n");
 			printf("1. Load/Store Instruction\n");
 			printf("2. ALU operations - ADD/SUB/MUL/DIV/MOD\n");
-			printf("3. EXIT\n");
+			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq\n");
+			printf("4. EXIT\n");
 			fgets(char_option,5,stdin);
 			sscanf(char_option,"%d",&option);
 			//option = option - '0';
@@ -664,17 +815,30 @@ int main(){
 			switch(option){
 				case 1:
 					res = load_and_store();
-					printf("\nDone\n");
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
 					break;
 				case 2:
 					res = alu_operations();
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
 					break;
-				case 3:
+				case 3: 
+					res = cond_codes();
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
+					break;
+				case 4:
 					res = false;
 					break;
 			}
 
-		}
-	
+		}	
 	}
 }
