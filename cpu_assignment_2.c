@@ -62,7 +62,14 @@ int mul(int inti, int src);
 int division(int inti, int src);
 int mod(int inti, int src);
 int rem =0;
-
+int addq(int src,int dest);
+int cmpq(int src,int dest);
+int sete();
+int sets();
+int setns();
+int setl();
+int setle();
+int setg();
 
 /***************Function pointers*******/
 
@@ -137,7 +144,7 @@ bool cond_codes(){
 	printf("3. Format for SETL operation: SETL dest Eg: SETL A\n");	
 	printf("4. Format for SETLE operation: SETLE dest Eg: SETLE A\n");
 	printf("5. Format for SETG operation: SETG dest Eg: SETG A\n");
-	printf("6. Format for SETE operation: SETE dest Eg: SETE A\n");
+	printf("6. Format for SETE operation: SETE dest Eg: SETE A\n");		
 	char instruction[20];
 	int len;
 	char *p2 = NULL;
@@ -266,6 +273,100 @@ int setle(){
 		return 0;
 	}
 }
+/********************************************************************************************
+Conditional codes with two operands.
+/********************************************************************************************/
+bool condcode_two(){
+printf("1. Format for ADDQ operation: ADDQ src,dest Eg: ADDQ A,B\n");
+printf("2. Format for CMPQ operation: CMPQ src,dest Eg: CMPQ A,B\n");
+char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	p2 = strtok(NULL," ");
+	srcreg = strtok(p2,",");
+	src = srcreg[0]-'A';
+	if(src > P){
+			printf("Source register should be from Register A-P \n");
+			return false;
+		}
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	dest = destreg[0]-'A';
+	if(dest > P){
+			printf("Destination register should be from Register A-P \n");
+			return false;
+		}
+	printf("Dest = %s\t Src reg = %s\n",destreg,srcreg);
+	/*****************************ADDITION**************************/
+		if (strcasecmp(p1, "ADDQ")==0) {
+			reg[dest] = addq(reg[src],reg[dest]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();	
+			return true;		
+		}
+		else if (strcasecmp(p1, "CMPQ")==0) {
+			reg[dest] = cmpq(reg[src],reg[dest]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();	
+			return true;		
+		}
+		else
+		{
+		return false;
+		}
+}
+/**************************************ADDQ*******************************************************/
+int addq(int src, int dest){
+	temp_reg[9] = src;
+	temp_reg[10] = dest;
+	temp_reg[11] = add(temp_reg[9],temp_reg[10]);
+	if(temp_reg[11] == 0)
+	{
+	printf("Zero Flag is set\n");
+		flags[1] = 1;
+	}
+	if(temp_reg[11] < 0)
+	{
+	printf("Sign Flag is set\n");
+	flags[2] = 1;
+	}
+	if((temp_reg[9]>0 && temp_reg[10]>0 && temp_reg[11]<0)||(temp_reg[9]<0 && temp_reg[10]<0) && temp_reg[10]>=0)
+	{
+	printf("Overflow Flag is set\n");
+		flags[3] = 1;
+	}
+	return temp_reg[11];
+}
+
+/**************************************CMPQ*******************************************************/
+int cmpq(int src, int dest){
+	temp_reg[9] = src;
+	temp_reg[10] = dest;
+	temp_reg[11] = sub(temp_reg[9],temp_reg[10]);
+	if(temp_reg[9] == temp_reg[10])
+	{
+	printf("Zero Flag is set\n");
+		flags[1] =1;
+	}
+	if(temp_reg[11] < 0)
+	{
+	printf("Sign Flag is set\n");
+		flags[2] = 1;
+	}
+	if((temp_reg[9]>0 && temp_reg[10]<0 && temp_reg[11]<0)||(temp_reg[9]<0 && temp_reg[10]>0) && temp_reg[10]>0)
+	{
+	printf("Overflow Flag is set");
+		flags[3] = 1;
+	}
+	return temp_reg[11];
+}
+
 /*********************************************************************************************
 Simple Function which calls the respective instruction. A function pointer is implemented 
 to point the functions like add, sub, mul, division and mod.
@@ -364,10 +465,6 @@ operand instruction. Also, flags like sign flag, carry flag, overflow flag and z
 /**************************************************************************************************/
 
 int add(int inti, int src){
-	//opcode = memory[pc];
-	//dest = memory[pc+1];
-	//inti =  memory[pc+2];
-	//src = memory[pc+3];
 	int carry;
 	temp_reg[0] = src;
 	temp_reg[1] = inti;
@@ -806,8 +903,9 @@ int main(){
 			printf("****************Instructions Menu****************\n");
 			printf("1. Load/Store Instruction\n");
 			printf("2. ALU operations - ADD/SUB/MUL/DIV/MOD\n");
-			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq\n");
-			printf("4. EXIT\n");
+			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq,addq\n");
+			printf("4. Condition Codes - compq,addq\n");
+			printf("5. EXIT\n");
 			fgets(char_option,5,stdin);
 			sscanf(char_option,"%d",&option);
 			//option = option - '0';
@@ -826,7 +924,7 @@ int main(){
 						printf("Wrong Instruction\n");
 						exit(-1);
 					}
-					break;
+					break;			
 				case 3: 
 					res = cond_codes();
 					if(res == false){
@@ -835,6 +933,13 @@ int main(){
 					}
 					break;
 				case 4:
+					res = condcode_two();
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
+					break;
+				case 5:
 					res = false;
 					break;
 			}
