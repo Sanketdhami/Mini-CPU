@@ -595,7 +595,7 @@ bool load_and_store(){
 
 		p2 = strtok(NULL,"");
 
-
+		indexreg =  strtok(p2,",)");
 		if(indexreg == NULL){
 				
 		}
@@ -614,6 +614,7 @@ bool load_and_store(){
 		else{
 			s = atoi(strtok(p2,")"));
 		}
+		printf("%d\n",s);
 		if(s==1 || s==2 || s==4 || s==8){
 		}
 		else{
