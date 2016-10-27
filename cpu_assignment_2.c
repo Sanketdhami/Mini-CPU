@@ -52,6 +52,8 @@ int address,part_address,result;
 /******Function Declarations*********/
 bool load_and_store();
 bool alu_operations();
+bool unconditional();
+int cmp();
 void init_memory();
 int execute_load();
 int execute_store();
@@ -71,7 +73,6 @@ int (*fun_ptr_sub)(int, int) = &sub;
 int (*fun_ptr_mul)(int, int) = &mul;
 int (*fun_ptr_division)(int, int) = &division;
 int (*fun_ptr_mod)(int, int) = &mod;
-
 
 
 void init_memory( )
@@ -534,6 +535,75 @@ int   c= 0 ,sign = 0;
   return temp_reg[7];
   }
 
+/*****************************************UNCONDTIONAL JUMP*****************************************/
+bool unconditional(){
+
+	printf("Enter the instruction: jmp\n");
+	char instruction[20];
+	fgets(instruction,20,stdin);
+
+      //remove newline from the input
+      int len = strlen(instruction);
+      instruction[len-1]='\0';
+
+      p1 = strtok(instruction," ");
+
+      printf("Value of Program Counter: %xH \n", pc);
+      //PC = PC + (int) temp_str;
+      pc = pc + 500;
+      printf("Value of Program Counter: %xH \n", pc);
+
+      return true;
+}
+
+int cmp(){
+	printf("Enter the instruction: cmp A,B\n");
+	char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	dest = destreg[0]-'A';
+	if(dest > P){
+		printf("Register should be from Register A-P \n");
+		return false;
+	}
+
+	p2 = strtok(NULL," ");
+	srcreg = strtok(p2,",");
+	src = srcreg[0]-'A';
+	if(src > P){
+	printf("Register should be from Register A-P \n");
+	return false;
+	}
+	printf("Register1 = %s\tRegister2 = %s\n",destreg,srcreg);
+	printf("Value of flag registers before execution of the instruction\n");
+	printf("Value of program counter %xH\n", pc);
+
+	//COMPARING BY SUBSTRACTION. bANKING HEAVILY ON THE FLAG UPDATION IN SUB.
+	reg[dest] = (*fun_ptr_sub)(reg[inti],reg[src]);
+	printf("Result %d\n", reg[dest]);
+	jump_decision();
+
+	print_values();
+	return 0;
+}
+
+int jump_decision(){
+
+	if(flags[1]==true){
+		//Jump equal
+	}
+	else if(flags[1]==false){
+		//Jump not equal
+	}
+	return 0;
+
+}
 
 /*****************************************LOAD AND STORE FUNCTION*****************************************/
 bool load_and_store(){
@@ -808,7 +878,9 @@ int main(){
 			printf("1. Load/Store Instruction\n");
 			printf("2. ALU operations - ADD/SUB/MUL/DIV/MOD\n");
 			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq\n");
-			printf("4. EXIT\n");
+			printf("4. Unconditional Jump\n");
+			printf("5. Conditional Jump\n");
+			printf("6. EXIT\n");
 			fgets(char_option,5,stdin);
 			sscanf(char_option,"%d",&option);
 			//option = option - '0';
@@ -836,6 +908,12 @@ int main(){
 					}
 					break;
 				case 4:
+					res = unconditional();
+					break;
+				case 5:
+					res = cmp();
+					break;
+				case 6:
 					res = false;
 					break;
 			}
