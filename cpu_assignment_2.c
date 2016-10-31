@@ -30,7 +30,7 @@
 enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P};
  int src=0, dest=0,inti=0;	/* Index for source and destination registers */
  int opcode = 0;	
- int offset=0;
+ int offset=0,max;
 int i = 0;
 
 char *destreg = NULL, *srcreg = NULL,*basereg = NULL, *indexreg = NULL,*intreg = NULL;
@@ -52,6 +52,8 @@ int address,part_address,result;
 /******Function Declarations*********/
 bool load_and_store();
 bool alu_operations();
+bool unconditional();
+int cmp();
 void init_memory();
 int execute_load();
 int execute_store();
@@ -64,12 +66,17 @@ int mod(int inti, int src);
 int rem =0;
 int addq(int src,int dest);
 int cmpq(int src,int dest);
+int forloop(int dest,int count,int max);
 int sete();
 int sets();
 int setns();
 int setl();
 int setle();
 int setg();
+bool loops();
+int jump_decision();
+int jump(int loc);
+
 
 /***************Function pointers*******/
 
@@ -78,7 +85,6 @@ int (*fun_ptr_sub)(int, int) = &sub;
 int (*fun_ptr_mul)(int, int) = &mul;
 int (*fun_ptr_division)(int, int) = &division;
 int (*fun_ptr_mod)(int, int) = &mod;
-
 
 
 void init_memory( )
@@ -135,8 +141,6 @@ int print_values(){
 	return 0;
 }
 /********************************************************************************************
-
-
 **********************************************************************************************/
 bool cond_codes(){
 	printf("1. Format for SETS operation: SETS dest Eg: SETS A\n");
@@ -144,7 +148,7 @@ bool cond_codes(){
 	printf("3. Format for SETL operation: SETL dest Eg: SETL A\n");	
 	printf("4. Format for SETLE operation: SETLE dest Eg: SETLE A\n");
 	printf("5. Format for SETG operation: SETG dest Eg: SETG A\n");
-	printf("6. Format for SETE operation: SETE dest Eg: SETE A\n");		
+	printf("6. Format for SETE operation: SETE dest Eg: SETE A\n");
 	char instruction[20];
 	int len;
 	char *p2 = NULL;
@@ -273,100 +277,6 @@ int setle(){
 		return 0;
 	}
 }
-/********************************************************************************************
-Conditional codes with two operands.
-/********************************************************************************************/
-bool condcode_two(){
-printf("1. Format for ADDQ operation: ADDQ src,dest Eg: ADDQ A,B\n");
-printf("2. Format for CMPQ operation: CMPQ src,dest Eg: CMPQ A,B\n");
-char instruction[20];
-	int len;
-	char *p2 = NULL;
-	fgets(instruction,20,stdin);
-	len = strlen(instruction);
-	instruction[len-1] = '\0';
-	p1 = strtok(instruction, " ");
-	p2 = strtok(NULL," ");
-	srcreg = strtok(p2,",");
-	src = srcreg[0]-'A';
-	if(src > P){
-			printf("Source register should be from Register A-P \n");
-			return false;
-		}
-	p2 = strtok(NULL," ");
-	destreg = strtok(p2,",");
-	dest = destreg[0]-'A';
-	if(dest > P){
-			printf("Destination register should be from Register A-P \n");
-			return false;
-		}
-	printf("Dest = %s\t Src reg = %s\n",destreg,srcreg);
-	/*****************************ADDITION**************************/
-		if (strcasecmp(p1, "ADDQ")==0) {
-			reg[dest] = addq(reg[src],reg[dest]);
-			printf("Result %d\n", reg[dest]);
-			pc = pc + 4;
-			print_values();	
-			return true;		
-		}
-		else if (strcasecmp(p1, "CMPQ")==0) {
-			reg[dest] = cmpq(reg[src],reg[dest]);
-			printf("Result %d\n", reg[dest]);
-			pc = pc + 4;
-			print_values();	
-			return true;		
-		}
-		else
-		{
-		return false;
-		}
-}
-/**************************************ADDQ*******************************************************/
-int addq(int src, int dest){
-	temp_reg[9] = src;
-	temp_reg[10] = dest;
-	temp_reg[11] = add(temp_reg[9],temp_reg[10]);
-	if(temp_reg[11] == 0)
-	{
-	printf("Zero Flag is set\n");
-		flags[1] = 1;
-	}
-	if(temp_reg[11] < 0)
-	{
-	printf("Sign Flag is set\n");
-	flags[2] = 1;
-	}
-	if((temp_reg[9]>0 && temp_reg[10]>0 && temp_reg[11]<0)||(temp_reg[9]<0 && temp_reg[10]<0) && temp_reg[10]>=0)
-	{
-	printf("Overflow Flag is set\n");
-		flags[3] = 1;
-	}
-	return temp_reg[11];
-}
-
-/**************************************CMPQ*******************************************************/
-int cmpq(int src, int dest){
-	temp_reg[9] = src;
-	temp_reg[10] = dest;
-	temp_reg[11] = sub(temp_reg[9],temp_reg[10]);
-	if(temp_reg[9] == temp_reg[10])
-	{
-	printf("Zero Flag is set\n");
-		flags[1] =1;
-	}
-	if(temp_reg[11] < 0)
-	{
-	printf("Sign Flag is set\n");
-		flags[2] = 1;
-	}
-	if((temp_reg[9]>0 && temp_reg[10]<0 && temp_reg[11]<0)||(temp_reg[9]<0 && temp_reg[10]>0) && temp_reg[10]>0)
-	{
-	printf("Overflow Flag is set");
-		flags[3] = 1;
-	}
-	return temp_reg[11];
-}
-
 /*********************************************************************************************
 Simple Function which calls the respective instruction. A function pointer is implemented 
 to point the functions like add, sub, mul, division and mod.
@@ -456,7 +366,163 @@ bool alu_operations(){
 		}
 	return true;
 }
+/********************************************************************************************
+Conditional codes with two operands.
+/********************************************************************************************/
+bool condcode_two(){
+printf("1. Format for ADDQ operation: ADDQ src,dest Eg: ADDQ A,B\n");
+printf("2. Format for CMPQ operation: CMPQ src,dest Eg: CMPQ A,B\n");
+char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	p2 = strtok(NULL," ");
+	srcreg = strtok(p2,",");
+	src = srcreg[0]-'A';
+	if(src > P){
+			printf("Source register should be from Register A-P \n");
+			return false;
+		}
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	dest = destreg[0]-'A';
+	if(dest > P){
+			printf("Destination register should be from Register A-P \n");
+			return false;
+		}
+	printf("Dest = %s\t Src reg = %s\n",destreg,srcreg);
+	/*****************************ADDITION**************************/
+		if (strcasecmp(p1, "ADDQ")==0) {
+			reg[dest] = addq(reg[src],reg[dest]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();	
+			return true;		
+		}
+		else if (strcasecmp(p1, "CMPQ")==0) {
+			reg[dest] = cmpq(reg[src],reg[dest]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();	
+			return true;		
+		}
+		else
+		{
+		return false;
+		}
+}
+/**************************************ADDQ*******************************************************/
+int addq(int src, int dest){
+	temp_reg[9] = src;
+	temp_reg[10] = dest;
+	temp_reg[11] = add(temp_reg[9],temp_reg[10]);
+	if(temp_reg[11] == 0)
+	{
+	printf("Zero Flag is set\n");
+		flags[1] = 1;
+	}
+	if(temp_reg[11] < 0)
+	{
+	printf("Sign Flag is set\n");
+	flags[2] = 1;
+	}
+	if((temp_reg[9]>0 && temp_reg[10]>0 && temp_reg[11]<0)||(temp_reg[9]<0 && temp_reg[10]<0) && temp_reg[10]>=0)
+	{
+	printf("Overflow Flag is set\n");
+		flags[3] = 1;
+	}
+	return temp_reg[11];
+}
 
+/**************************************CMPQ*******************************************************/
+int cmpq(int src, int dest){
+	temp_reg[12] = src;
+	temp_reg[13] = dest;
+	temp_reg[14] = sub(temp_reg[12],temp_reg[13]);
+	if(temp_reg[12] == temp_reg[13])
+	{
+	printf("Zero Flag is set\n");
+		flags[1] =1;
+	}
+	if(temp_reg[14] < 0)
+	{
+	printf("Sign Flag is set\n");
+		flags[2] = 1;
+	}
+	if((temp_reg[12]>0 && temp_reg[13]<0 && temp_reg[14]<0)||(temp_reg[12]<0 && temp_reg[13]>0) && temp_reg[14]>0)
+	{
+	printf("Overflow Flag is set");
+		flags[3] = 1;
+	}
+	return temp_reg[14];
+}
+/********************************************************************************************
+Loops
+/********************************************************************************************/
+bool loops()
+{
+	printf("1. Format for For operation: to increment a number by one till the max is reached For Eg: for A,number\n");
+	printf("2. Format for Do..While operation: \n");
+	printf("3. Format for While..do operation: \n");
+	char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	p2 = strtok(NULL," ");
+	srcreg = strtok(p2,",");
+	src = srcreg[0]-'A';
+	if(src > P){
+			printf("Source register should be from Register A-P \n");
+			return false;
+		}
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	max = atoi(destreg);
+	printf("Dest = %d\t Src destreg = %s\n",max,srcreg);
+	if (strcasecmp(p1, "for")==0) {
+			int count = 0;
+			cmpq(count,max);
+			if(flags[2] == 1)
+			{
+				pc = jump(900);	//jumps to particular location
+				int resultfor = forloop(reg[src],count,max);
+				if(!resultfor)
+				{
+				printf("Result %d\n", reg[src]);
+				print_values();	
+				return true;
+				}
+			}		
+		}
+	else {
+		return false;
+	}
+}
+//try without arguments making it global
+int forloop(int dest,int count,int max)
+{
+	temp_reg[16] = dest;
+	temp_reg[11] = 1;
+	temp_reg[12] = count;
+	temp_reg[13] = max;
+	temp_reg[16]= add(temp_reg[16],temp_reg[11]);
+	pc = pc + 4;
+	temp_reg[12] = add(temp_reg[12],temp_reg[11]);
+	pc = pc + 4;
+	cmpq(temp_reg[12],temp_reg[13]);
+	if(flags[2]) //compare check sign
+	{
+		forloop(temp_reg[16],temp_reg[12],temp_reg[13]);		
+	}
+	reg[src] = temp_reg[16];
+	return 0;
+}
 
 /*****************************************ADDITION FUNCTION*****************************************
 This function adds the content of inti and src and returns the value. The returned value is stored in 
@@ -465,6 +531,10 @@ operand instruction. Also, flags like sign flag, carry flag, overflow flag and z
 /**************************************************************************************************/
 
 int add(int inti, int src){
+	//opcode = memory[pc];
+	//dest = memory[pc+1];
+	//inti =  memory[pc+2];
+	//src = memory[pc+3];
 	int carry;
 	temp_reg[0] = src;
 	temp_reg[1] = inti;
@@ -544,7 +614,6 @@ int mul(int inti, int src){
 /*****************************************DIVISION FUNCTION*****************************************
 This function divides the content of inti with src and returns the value. The returned value is stored in 
 destination register. Thus making it a 3 operand instruction. 
-
 /***************************************************************************************************/
 int division(int inti, int src){
 	//printf("Performing Division");
@@ -596,7 +665,6 @@ int division(int inti, int src){
 /*****************************************MOD FUNCTION*****************************************
 This function performs modulus operation on the content of inti with src and returns the value. 
 The returned value is stored in destination register. Thus making it a 3 operand instruction. 
-
 /**********************************************************************************************/
 int mod(int inti, int src){
 temp_reg[7] = inti;
@@ -630,7 +698,82 @@ int   c= 0 ,sign = 0;
   }
   return temp_reg[7];
   }
+  /****************************************Jump Label*******************************************/
+  int jump(int loc)
+  {
+  	pc = loc;
+  	return pc;
+  }
 
+/*****************************************UNCONDTIONAL JUMP*****************************************/
+bool unconditional(){
+
+	printf("Enter the instruction: jmp\n");
+	char instruction[20];
+	fgets(instruction,20,stdin);
+
+      //remove newline from the input
+      int len = strlen(instruction);
+      instruction[len-1]='\0';
+
+      p1 = strtok(instruction," ");
+
+      printf("Value of Program Counter: %xH \n", pc);
+      //PC = PC + (int) temp_str;
+      pc = pc + 500;
+      printf("Value of Program Counter: %xH \n", pc);
+
+      return true;
+}
+
+int cmp(){
+	printf("Enter the instruction: cmp A,B\n");
+	char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	dest = destreg[0]-'A';
+	if(dest > P){
+		printf("Register should be from Register A-P \n");
+		return false;
+	}
+
+	p2 = strtok(NULL," ");
+	srcreg = strtok(p2,",");
+	src = srcreg[0]-'A';
+	if(src > P){
+	printf("Register should be from Register A-P \n");
+	return false;
+	}
+	printf("Register1 = %s\tRegister2 = %s\n",destreg,srcreg);
+	printf("Value of flag registers before execution of the instruction\n");
+	printf("Value of program counter %xH\n", pc);
+
+	//COMPARING BY SUBSTRACTION. bANKING HEAVILY ON THE FLAG UPDATION IN SUB.
+	reg[dest] = (*fun_ptr_sub)(reg[inti],reg[src]);
+	printf("Result %d\n", reg[dest]);
+	jump_decision();
+
+	print_values();
+	return 0;
+}
+
+int jump_decision(){
+
+	if(flags[1]==true){
+		//Jump equal
+	}
+	else if(flags[1]==false){
+		//Jump not equal
+	}
+	return 0;
+
+}
 
 /*****************************************LOAD AND STORE FUNCTION*****************************************/
 bool load_and_store(){
@@ -692,7 +835,7 @@ bool load_and_store(){
 
 		p2 = strtok(NULL,"");
 
-
+		indexreg =  strtok(p2,",)");
 		if(indexreg == NULL){
 				
 		}
@@ -711,6 +854,7 @@ bool load_and_store(){
 		else{
 			s = atoi(strtok(p2,")"));
 		}
+		printf("%d\n",s);
 		if(s==1 || s==2 || s==4 || s==8){
 		}
 		else{
@@ -903,9 +1047,12 @@ int main(){
 			printf("****************Instructions Menu****************\n");
 			printf("1. Load/Store Instruction\n");
 			printf("2. ALU operations - ADD/SUB/MUL/DIV/MOD\n");
-			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq,addq\n");
-			printf("4. Condition Codes - compq,addq\n");
-			printf("5. EXIT\n");
+			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq\n");
+			printf("4. Unconditional Jump\n");
+			printf("5. Conditional Jump\n");
+			printf("6. Condition Codes - compq,addq\n");
+			printf("7. Loops, for, do..while, while..do");
+			printf("8. EXIT\n");
 			fgets(char_option,5,stdin);
 			sscanf(char_option,"%d",&option);
 			//option = option - '0';
@@ -924,7 +1071,7 @@ int main(){
 						printf("Wrong Instruction\n");
 						exit(-1);
 					}
-					break;			
+					break;
 				case 3: 
 					res = cond_codes();
 					if(res == false){
@@ -933,13 +1080,26 @@ int main(){
 					}
 					break;
 				case 4:
+					res = unconditional();
+					break;
+				case 5:
+					res = cmp();
+					break;
+				case 6:
 					res = condcode_two();
 					if(res == false){
 						printf("Wrong Instruction\n");
 						exit(-1);
 					}
 					break;
-				case 5:
+				case 7:
+					res = loops();
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
+					break;
+				case 8:
 					res = false;
 					break;
 			}
