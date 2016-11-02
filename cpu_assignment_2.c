@@ -205,23 +205,23 @@ bool binary_search(){
 	
 	printf("Enter the element to be searched\n");
 	scanf("%d",&key);
-	push(pc);
+	push(pc);							//PUSH PC
 	//pc = 500;		//RECURSIVE BINARY SEARCH FUNCTION IS AT 500th LOCATION
 	//temp_reg[12] = temp_reg[12] - 1;
-	jump(location_recursive_binary_search);
-	temp_reg[16] = recursive_binary_search(1900,temp_reg[12],key);
-	temp_reg[16] = temp_reg[16] -1900;
+	jump(location_recursive_binary_search);				//JUMP 500
+	temp_reg[16] = recursive_binary_search(1900,temp_reg[12],key);  //CALL 
+	temp_reg[16] = sub(temp_reg[16],1900);	
 	if(temp_reg[16]<0){
 		printf("****ELEMENT NOT FOUND****\n");
 	}
 	else{
-		reg[7] = add(temp_reg[16],1);
+		reg[7] = add(temp_reg[16],1);				//ADD R7,TR16,1 
 		pc = pc +4; 
 		printf("ELEMENT FOUND AT POSITION %d\n",reg[7]);
 	}
 	printf("\n\n");
 	//print_values();
-	pc = pop();
+	pc = pop();							//POP PC
 	print_values();
 	return true;
 
@@ -229,11 +229,11 @@ bool binary_search(){
 
 void push(pc){
 	memory[sp] = pc+4;
-	sp = sub(sp,1);
-	printf("stack in push %d\n", sp);	
+	sp = sub(sp,1);										//SUB SP,SP,1
+	printf("stack in push %d\n", sp);		
 }
 int pop(){
-	sp = add(sp,1);
+	sp = add(sp,1);										//ADD SP,SP,1
 	printf("stack in pop %d\n", sp);
 	return memory[sp];
 
@@ -249,25 +249,24 @@ int recursive_binary_search(int start,int end,int key){
 	temp_reg[14] = end;
 	temp_reg[15] = key;
 	//printf("Start PC = %d\n",pc);
-	cmpq(temp_reg[13],temp_reg[14]);
+	cmpq(temp_reg[13],temp_reg[14]);							//CMPQ TR13,TR14
 	//printf("%d>=%d\n",temp_reg[14],temp_reg[13]);
 	pc = pc+4;
 	//printf("PC before IF= %d\n",pc);
-	if(flags[1] == 1 || flags[2] == 1){
-		int temp_reg[16];
-		temp_reg[16] = sub(temp_reg[14],temp_reg[13]);
+	if(flags[1] == 1 || flags[2] == 1){						
+		temp_reg[16] = sub(temp_reg[14],temp_reg[13]);					//SUB TR16,TR14,TR13
 		//printf("temp_reg[16] after sub =  %d\n",temp_reg[16]);
 		pc = pc+4;
 		//printf("PC = %d\n",pc);
-		temp_reg[16] = division(temp_reg[16],2);
+		temp_reg[16] = division(temp_reg[16],2);					//DIV TR16,TR16,2
 		//printf("temp_reg[16] after division = %d\n",temp_reg[16]);
 		pc = pc+4;
 		//printf("PC = %d\n",pc);
-		temp_reg[16] = add(temp_reg[13],temp_reg[16]);
+		temp_reg[16] = add(temp_reg[13],temp_reg[16]);					//ADD TR16,TR13,TR16
 		//printf("temp_reg[16] after add = %d\n",temp_reg[16]);
 		pc = pc+4;
 		//printf("PC = %d\n",pc);
-		cmpq(memory[temp_reg[16]],temp_reg[15]);	
+		cmpq(memory[temp_reg[16]],temp_reg[15]);					//CMPQ TR16,TR15
 		pc = pc+4;
 		//printf("PC after cmpq= %d\n",pc);
 		if (flags[1]==1){
@@ -275,27 +274,27 @@ int recursive_binary_search(int start,int end,int key){
 			return temp_reg[16];
 		}
 		else if(flags[2]==1){
-			temp_reg[13] = add(temp_reg[16],1);
+			temp_reg[13] = add(temp_reg[16],1);					//ADD TR16,1
 			pc = pc+4;
 		//	printf("%d<%d\n",memory[temp_reg[16]],temp_reg[15]);
 			printf("SP before push= %d\n",sp);
-			push(pc);
-			jump(location_recursive_binary_search);
-			pc = pop();
+			push(pc);								//PUSH 
+			jump(location_recursive_binary_search);					//JUMP 500
+			pc = pop();								//POP
 			printf("SP after pop= %d\n",sp);
-			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);
+			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);	//CALL
 			
 		}
 		else{
 		//	printf("%d>%d\n",memory[temp_reg[16]],temp_reg[15]);
-			temp_reg[14] = sub(temp_reg[16],1);
+			temp_reg[14] = sub(temp_reg[16],1);					//SUB TR14,TR16,1
 			pc = pc +4;
-			push(pc);
-			jump(location_recursive_binary_search);
+			push(pc);								//PUSH
+			jump(location_recursive_binary_search);					//JUMP 500
 			printf("SP before push= %d\n",sp);
-			pc = pop();
+			pc = pop();								//POP
 			printf("SP after pop= %d\n",sp);
-			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);
+			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]); //CALL
 			
 		}
 		
@@ -682,7 +681,7 @@ of the negative number and calls the addition function.
 int sub(int inti, int src){
 	//printf("Performing Subtraction \n");	
 	temp_reg[4] = src;
-	temp_reg[5] = inti; //2'S complement
+	temp_reg[5] = inti; 
 	temp_reg[4] = (*fun_ptr_add)(~temp_reg[4], 1);
 	temp_reg[4] = (*fun_ptr_add)(temp_reg[4], temp_reg[5]);
 	return temp_reg[4];
