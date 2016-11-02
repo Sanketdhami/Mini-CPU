@@ -19,7 +19,7 @@
 #define INSTR_MEMORY_BASE_ADD 256	/* Base Address of Instruction Memory = 256 */
 #define BOOT_MEMORY_BASE_ADD 0		/* Base Address of BIOS = 0 */
 #define location_recursive_binary_search 500
-
+#define LOOP_ADDRESS 900 /* Looping function */
 #define STORE_OPCODE 3		/* Opcode for STORE instruction */
 #define LOAD_OPCODE 4		/* Opcode for LOAD instruction */
 #define ADD_OPCODE 5
@@ -68,7 +68,7 @@ char *p1 = NULL;
 int address,part_address,result;
 
 /******Function Declarations*********/
-bool load_and_store();
+bool load_store_and_lea();
 bool alu_operations();
 bool cond_codes();
 bool jump_instructions();
@@ -76,6 +76,7 @@ bool binary_search();
 void init_memory();
 int execute_load();
 int execute_store();
+int execute_lea();
 int print_values();
 int add(int inti, int src);
 int sub(int inti, int src);
@@ -94,6 +95,10 @@ int setle();
 int setg();
 void push(int);
 int pop();
+int looping(int dest,int count,int max);
+bool loops();
+int jump(int loc);
+int loopingwhile(int dest,int max);
 
 /***************Function pointers*******/
 
@@ -167,8 +172,9 @@ int print_values(){
 
 
 /********************************************************************************************
-
-
+This is the main function for binary search where it asks user to enter elements in ascending 
+order and the element to be searched. Later it calls recursive_binary_search function which 
+returns the index for the searched element and displays the position og found element.
 **********************************************************************************************/
 bool binary_search(){
 	printf("Enter number of elements for binary search\n");
@@ -205,23 +211,23 @@ bool binary_search(){
 	
 	printf("Enter the element to be searched\n");
 	scanf("%d",&key);
-	push(pc);							//PUSH PC
+	push(pc);										//PUSH PC
 	//pc = 500;		//RECURSIVE BINARY SEARCH FUNCTION IS AT 500th LOCATION
 	//temp_reg[12] = temp_reg[12] - 1;
-	jump(location_recursive_binary_search);				//JUMP 500
-	temp_reg[16] = recursive_binary_search(1900,temp_reg[12],key);  //CALL 
+	jump(location_recursive_binary_search);							//JUMP 500
+	temp_reg[16] = recursive_binary_search(1900,temp_reg[12],key);  			//CALL 
 	temp_reg[16] = sub(temp_reg[16],1900);	
 	if(temp_reg[16]<0){
 		printf("****ELEMENT NOT FOUND****\n");
 	}
 	else{
-		reg[7] = add(temp_reg[16],1);				//ADD R7,TR16,1 
-		pc = pc +4; 
+		reg[7] = add(temp_reg[16],1);							//ADD R7,TR16,1 
+		pc = pc +4; 		
 		printf("ELEMENT FOUND AT POSITION %d\n",reg[7]);
-	}
+	}	
 	printf("\n\n");
 	//print_values();
-	pc = pop();							//POP PC
+	pc = pop();										//POP PC
 	print_values();
 	return true;
 
@@ -241,8 +247,12 @@ int pop(){
 
 
 /********************************************************************************************
-
-
+Here we have implemented Recursive Binary Search along with Stack functions.
+This function searches an element from a given set of elements stored in memory using binary 
+search and recursively calls the function till it finds an element. If found, it displays the 
+index of the element present in array of element. If not found then, it will display element not
+found. 
+Stack operations are also performed like PUSH and POP functions.
 **********************************************************************************************/
 int recursive_binary_search(int start,int end,int key){
 	temp_reg[13] = start;
@@ -254,6 +264,7 @@ int recursive_binary_search(int start,int end,int key){
 	pc = pc+4;
 	//printf("PC before IF= %d\n",pc);
 	if(flags[1] == 1 || flags[2] == 1){						
+		//int temp_reg[16];
 		temp_reg[16] = sub(temp_reg[14],temp_reg[13]);					//SUB TR16,TR14,TR13
 		//printf("temp_reg[16] after sub =  %d\n",temp_reg[16]);
 		pc = pc+4;
@@ -271,10 +282,10 @@ int recursive_binary_search(int start,int end,int key){
 		//printf("PC after cmpq= %d\n",pc);
 		if (flags[1]==1){
 		//	printf("%d==%d\n",memory[temp_reg[16]],temp_reg[15]);
-			return temp_reg[16];
+			return temp_reg[16];							//RET
 		}
 		else if(flags[2]==1){
-			temp_reg[13] = add(temp_reg[16],1);					//ADD TR16,1
+			temp_reg[13] = add(temp_reg[16],1);					//ADD TR13,TR16,1
 			pc = pc+4;
 		//	printf("%d<%d\n",memory[temp_reg[16]],temp_reg[15]);
 			printf("SP before push= %d\n",sp);
@@ -282,7 +293,7 @@ int recursive_binary_search(int start,int end,int key){
 			jump(location_recursive_binary_search);					//JUMP 500
 			pc = pop();								//POP
 			printf("SP after pop= %d\n",sp);
-			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);	//CALL
+			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);	//CALL & RET 
 			
 		}
 		else{
@@ -294,7 +305,7 @@ int recursive_binary_search(int start,int end,int key){
 			printf("SP before push= %d\n",sp);
 			pc = pop();								//POP
 			printf("SP after pop= %d\n",sp);
-			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]); //CALL
+			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]); //CALL & RET
 			
 		}
 		
@@ -305,8 +316,8 @@ int recursive_binary_search(int start,int end,int key){
 
 
 /********************************************************************************************
-
-
+Below are set of condition codes where it sets the register to 1 based on the flag.
+For Eg. SETS A  will set the register to 1 if Signed Flag is 1. 
 **********************************************************************************************/
 bool cond_codes(){
 	printf("1. Format for SETS operation: SETS dest Eg: SETS A\n");
@@ -627,6 +638,170 @@ bool alu_operations(){
 	return true;
 }
 
+/***********************************************************************************************************
+Loops
+For loop Increments till the maximum number is reached by the counter.
+dowhile loop Increments if the source register is less than than the Comparing register or equal if it is
+greater nothing is done.
+whiledo loop increments if the source register is less than than the Comparing register if it is  equal and
+greater nothing is done.
+*********************************************************************************************************/
+bool loops()
+{
+	printf("1. Format for For operation: to increment a number by one till the max is reached For Eg: for B,number\n");
+	printf("2. Format for Do..While operation: it increments once without checking condition then it checks the condition to increment for Eg: dowhile B,number \n");
+	printf("3. Format for While..do operation: it increments after the condition is true for Eg: whiledo B,number\n");
+	char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	p2 = strtok(NULL," ");
+	srcreg = strtok(p2,",");
+	src = srcreg[0]-'A';
+	if(src > P){
+			printf("Source register should be from Register A-P \n");
+			return false;
+		}
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	dest = destreg[0]-'A';
+	if(dest > P){
+			printf("Destination register should be from Register A-P \n");
+			return false;
+		}
+	printf("Dest = %s\t Src destreg = %s\n",destreg,srcreg);
+	if (strcasecmp(p1, "for")==0) {
+			int count = 0;
+			printf("dest register %d \n",reg[dest]);
+			cmpq(count,reg[dest]);	
+			pc = pc + 4;
+			if(flags[2])
+			{
+				jump(LOOP_ADDRESS);	//jumps to particular location
+				looping(reg[src],count,reg[dest]);
+				printf("Result %d\n", reg[src]);
+				print_values();	
+				return true;
+			}		
+			else if(flags[1])
+			{
+				printf("Cannot increment as the value Max is equal to the count\n");
+				print_values();	
+				return true;
+			}
+		}
+		else if (strcasecmp(p1, "dowhile") == 0)
+		{
+			cmpq(reg[src],reg[dest]);	
+			pc = pc + 4;
+			if(flags[1])
+			{
+				reg[src] = add(reg[src],1); //incrementing 
+				pc = pc + 4;
+				printf("Result %d\n", reg[src]);
+				print_values();	
+				return true;				
+			}
+			else if(flags[2])
+			{
+				jump(LOOP_ADDRESS);	//jumps to particular location
+			 	loopingwhile(reg[src],reg[dest]);
+				printf("Result %d\n", reg[src]);
+				print_values();
+				return true;
+			}
+			else if (!flags[1])
+			{
+				reg[src] = add(reg[src],1); //incrementing 
+				pc = pc + 4;
+				printf("Result %d\n", reg[src]);
+				print_values();	
+				return true;	
+			}
+		}
+		else if (strcasecmp(p1,"whiledo") == 0)
+		{
+			int count = 0;
+			cmpq(reg[src],reg[dest]); 
+			pc = pc + 4;
+			if(flags[2])
+			{
+				jump(LOOP_ADDRESS);	//jumps to particular location
+				loopingwhile(reg[src],reg[dest]);
+				printf("Result %d\n", reg[src]);
+				print_values();	
+				return true;
+			}	
+			else if(flags[1])
+			{
+				printf("Values are equal so cannot increment \n");
+				print_values();	
+				return true;
+			}
+			else if (!flags[1])
+			{
+				printf("Cannot increment as the src is greater than the given number so cannot increment\n");
+				print_values();	
+				return true;
+			}	
+			
+		}
+	else {
+		return false;
+	}
+}
+/********************************************Looping*********************************************
+Increments till the count reaches the max. this is for "for loop"
+************************************************************************************************/
+int looping(int dest,int count,int max)
+{
+	temp_reg[16] = dest;
+	temp_reg[11] = 1;
+	temp_reg[12] = count;
+	temp_reg[13] = max;
+	printf("max value %d",max);
+	temp_reg[16]= add(temp_reg[16],temp_reg[11]); // ADD R3,R1,R2
+	pc = pc + 4;
+	temp_reg[12] = add(temp_reg[12],temp_reg[11]); // ADD R3,R1,R2
+	pc = pc + 4;
+	cmpq(temp_reg[12],temp_reg[13]); 
+	pc = pc + 4;
+	if(flags[2])
+	{
+		pc = pc + 4;
+		jump(900);
+		looping(temp_reg[16],temp_reg[12],temp_reg[13]);		
+	}
+	reg[src] = temp_reg[16];
+	return 0;
+}
+/********************************************LoopingWhile********************************************
+Increments till the source equal to the destination. this is for "do while" and "while do"
+************************************************************************************************/
+int loopingwhile(int dest,int max)
+{
+	temp_reg[16] = dest;
+	temp_reg[11] = 1;
+	temp_reg[13] = max;
+	printf("max value %d",max);
+	temp_reg[16]= add(temp_reg[16],temp_reg[11]);	// ADD R3,R1,R2
+	pc = pc + 4;
+	cmpq(temp_reg[16],temp_reg[13]);	
+	pc = pc + 4;
+	if(flags[2]) //compare check sign
+	{
+		pc = pc + 4;
+		jump(900);
+		loopingwhile(temp_reg[16],temp_reg[13]);		
+	}
+	reg[src] = temp_reg[16];
+	return 0;
+}
+
+
 
 /*****************************************ADDITION FUNCTION*****************************************
 This function adds the content of inti and src and returns the value. The returned value is stored in 
@@ -802,10 +977,11 @@ int   c= 0 ,sign = 0;
   }
 
 
-/*****************************************LOAD AND STORE FUNCTION*****************************************/
-bool load_and_store(){
+/*****************************************LOAD,STORE and LEA FUNCTION*****************************************/
+bool load_store_and_lea(){
 	printf("1. Format for LOAD operation: LOAD dest_reg,offset(src_reg) Eg: LOAD A,30(RB,RI,4) \n");
 	printf("2 .Format for STORE opcode: STORE dest_reg,offset(src_reg) Eg: STORE A,30(B) \n"); 
+	printf("3. Format for LEA operation: LEA dest_reg,offset(src_reg) EG: LEA A,30(RB,RI,4) \n");
 	char *p2 = NULL,*p3 = NULL,*p4 = NULL;
 	char instruction[20];
 	int s,base,index;
@@ -906,6 +1082,104 @@ bool load_and_store(){
 			return false;
 		}	      	
 	}
+	else if (strcasecmp(p1, "LEA")==0) {
+		p2 = strtok(NULL,"");
+
+		destreg = strtok(p2,",");
+
+		dest = destreg[0] - 'A';
+
+		if(dest > P) {
+			printf("Destination registers should be from Register A-P \n");
+			return false;
+		}
+
+        p2 = strtok(NULL,"");
+
+        p2 = strtok(p2,"(");
+			
+		if(p2==NULL){
+			offset = 0;
+		}
+		else{
+			offset = atoi(p2);
+		}
+
+		p3 = strtok(NULL,"(");
+
+		if(p3 == NULL){
+			if(p2==NULL){
+
+			}
+			else{
+				p3=p2;
+			}
+		}
+
+		p4 =strtok(p3,",)");
+
+		if(p4 == NULL){
+			basereg = NULL;
+		}
+		else{
+			basereg = p4;
+			base = basereg[0] - 'A';     /*Index for source register*/
+			if(base > P){
+				printf("Base registers should be from Register A-P \n");
+				return false;	
+			}
+		}			
+
+		p2 = strtok(NULL,"");
+
+		indexreg =  strtok(p2,",)");
+
+		if(indexreg == NULL){
+				
+		}
+		else{
+			index = indexreg[0] - 'A';     /*Index for source register*/
+			if(index > P){
+				printf("Index registers should be from Register A-P \n");
+				return false;
+			}
+		}			
+		p2 = strtok(NULL,")");
+
+		if(p2==NULL){
+			s = 0;
+		}
+		else{
+			s = atoi(strtok(p2,")"));
+		}
+		if(s==0 || s==1 || s==2 || s==4 || s==8){
+		}
+		else{
+			printf("S should be 1,2,4 or 8\n");
+			exit(0);
+		}
+
+		part_address = reg[base]+s*reg[index];
+
+		memory[INSTR_MEMORY_BASE_ADD + i] = opcode;
+		memory[INSTR_MEMORY_BASE_ADD + i+1] = dest;
+		memory[INSTR_MEMORY_BASE_ADD + i+2] = offset; 
+		memory[INSTR_MEMORY_BASE_ADD + i+3] = part_address; 
+		i = i+4;
+
+		result = execute_lea();
+		if (result !=0){
+			printf("Error in executing Lea Instruction \n");
+			return false;
+		}
+		result = print_values();
+		if (result !=0){
+			printf("Error in printing values \n");
+			return false;
+		}
+
+	}
+
 	else if (strcasecmp(p1, "STORE")==0) {
 		opcode = STORE_OPCODE;
 		p2 = strtok(NULL," ");
@@ -1031,6 +1305,34 @@ int execute_load(){
 	}		
 }
 
+/****************Function for LEA Instruction *********************************************/
+/*	On executing LEA destreg,offset(srcreg) instruction, the address or 
+	value present in source register is added with offset which will result 
+	into final address. The final address is then loaded directly into the 
+	destination register.*/
+/*******************************************************************************************/
+int execute_lea() {
+
+	opcode = memory[pc];
+	dest = memory[pc+1];
+	offset = memory[pc+2];
+
+	part_address = memory[pc+3];
+	address = part_address + offset;
+
+	if(address >= INSTR_MEMORY_BASE_ADD && address < MEMORY_SIZE){
+	reg[dest] = address;
+	pc = pc+4;
+	printf("LEA Instruction executed successfully\n\n\n");
+	return 0;
+}
+else{ 
+		printf("Invalid location\n");
+	}
+
+}
+
+
 /****************Function for STORE Instruction *********************************************/
 /*	On executing STORE destreg,offset(srcreg) instruction, the address or 
 	value present in source register is added with offset which will result 
@@ -1072,19 +1374,20 @@ int main(){
 		while(res == true){
 			printf("Enter instructions number from the menu\n");
 			printf("****************Instructions Menu****************\n");
-			printf("1. Load/Store Instruction\n");
+			printf("1. Load/Store/LEA Instruction\n");
 			printf("2. ALU operations - ADD/SUB/MUL/DIV/MOD\n");
-			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq,addq\n");
+			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq\n");
 			printf("4. Condition Codes - compq,addq\n");
-			printf("5. Perform Recursive Binary Search\n");
-			printf("6. EXIT\n");
+			printf("5. Perform Recursive Binary Search with Stack operations\n");
+			printf("6. Loops, for, do..while, while..do implemented using jump instructions\n");
+			printf("7. EXIT\n");
 			fgets(char_option,5,stdin);
 			sscanf(char_option,"%d",&option);
 			//option = option - '0';
 			//printf(" %d\n",option);
 			switch(option){
 				case 1:
-					res = load_and_store();
+					res = load_store_and_lea();
 					if(res == false){
 						printf("Wrong Instruction\n");
 						exit(-1);
@@ -1114,14 +1417,23 @@ int main(){
 				
 				case 5:
 					res = binary_search();
-					
 					if(res == false){
 						printf("Wrong Instruction\n");
 						exit(-1);
 					}
+					exit(0);
+				case 6:
+					res = loops();
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
+					break;
 					
 				case 7:
 					res = false;
+					exit(-1);
+				default:
 					break;
 			}
 
