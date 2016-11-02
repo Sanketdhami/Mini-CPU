@@ -18,9 +18,27 @@
 #define DATA_MEMORY_BASE_ADD 1024	/* Base Address of Data Memory = 1024 */
 #define INSTR_MEMORY_BASE_ADD 256	/* Base Address of Instruction Memory = 256 */
 #define BOOT_MEMORY_BASE_ADD 0		/* Base Address of BIOS = 0 */
+#define location_recursive_binary_search 500
 
 #define STORE_OPCODE 3		/* Opcode for STORE instruction */
 #define LOAD_OPCODE 4		/* Opcode for LOAD instruction */
+#define ADD_OPCODE 5
+#define SUB_OPCODE 6
+#define DIV_OPCODE 7
+#define MUL_OPCODE 8
+#define MOD_OPCODE 9
+#define CMPQ_OPCODE 10
+#define ADDQ_OPCODE 11
+#define SETE_OPCODE 12
+#define SETS_OPCODE 13
+#define SETNS_OPCODE 14
+#define SETL_OPCODE 15
+#define SETLE_OPCODE 16
+#define SETG_OPCODE 17
+#define JMP_OPCODE 18
+#define PUSH_OPCODE 19
+#define POP_OPCODE 20
+
 /******add opcodes*****************************************************************************************************/
 
 
@@ -45,15 +63,16 @@ bool flags[4]={ false };	/* flag register for setting various flags*/
  int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
 
 /* Stack Pointer */
- int sp = MEMORY_SIZE-1;
+int sp = MEMORY_SIZE-1;
 char *p1 = NULL;
 int address,part_address,result;
 
 /******Function Declarations*********/
 bool load_and_store();
 bool alu_operations();
-bool unconditional();
-int cmp();
+bool cond_codes();
+bool jump_instructions();
+bool binary_search();
 void init_memory();
 int execute_load();
 int execute_store();
@@ -63,8 +82,18 @@ int sub(int inti, int src);
 int mul(int inti, int src);
 int division(int inti, int src);
 int mod(int inti, int src);
+int recursive_binary_search(int, int, int);
 int rem =0;
-
+int addq(int src,int dest);
+int cmpq(int src,int dest);
+int sete();
+int sets();
+int setns();
+int setl();
+int setle();
+int setg();
+void push(int);
+int pop();
 
 /***************Function pointers*******/
 
@@ -73,6 +102,7 @@ int (*fun_ptr_sub)(int, int) = &sub;
 int (*fun_ptr_mul)(int, int) = &mul;
 int (*fun_ptr_division)(int, int) = &division;
 int (*fun_ptr_mod)(int, int) = &mod;
+
 
 
 void init_memory( )
@@ -128,6 +158,153 @@ int print_values(){
 	printf("\n\n\n");
 	return 0;
 }
+ /****************************************Jump Label*******************************************/
+  int jump(int loc)
+  {
+  	pc = loc;
+  	return pc;
+  }
+
+
+/********************************************************************************************
+
+
+**********************************************************************************************/
+bool binary_search(){
+	printf("Enter number of elements for binary search\n");
+	char element_char[5];
+	int element_int,element;
+	fgets(element_char,5,stdin);
+	sscanf(element_char,"%d",&element_int);
+	int c;
+	int key,index;
+	temp_reg[12] = 1900; 
+	printf("Enter elements in ascending order. Press enter after each element!!\n");
+	scanf("%d",&element);
+	memory[temp_reg[12]] = element;
+	temp_reg[12] = temp_reg[12] + 1;
+	for(c=1;c<element_int;c++){
+		scanf("%d",&element);
+		memory[temp_reg[12]] = element;
+		if(memory[temp_reg[12]-1]>memory[temp_reg[12]]){
+			printf("Elements entered are not in ascending order!!\n");
+			exit(0);
+		}
+		temp_reg[12] = temp_reg[12] + 1;
+	}
+	
+        temp_reg[12] = 1900;
+	printf("The Elements are \n");
+	for(c=0;c<element_int;c++){
+		printf("%d  ",memory[temp_reg[12]]);
+		temp_reg[12] = temp_reg[12] + 1;
+	}
+	printf("\n");
+	//printf("%d\n",temp_reg[12]);
+
+	
+	printf("Enter the element to be searched\n");
+	scanf("%d",&key);
+	push(pc);
+	//pc = 500;		//RECURSIVE BINARY SEARCH FUNCTION IS AT 500th LOCATION
+	//temp_reg[12] = temp_reg[12] - 1;
+	jump(location_recursive_binary_search);
+	temp_reg[16] = recursive_binary_search(1900,temp_reg[12],key);
+	temp_reg[16] = temp_reg[16] -1900;
+	if(temp_reg[16]<0){
+		printf("****ELEMENT NOT FOUND****\n");
+	}
+	else{
+		reg[7] = add(temp_reg[16],1);
+		pc = pc +4; 
+		printf("ELEMENT FOUND AT POSITION %d\n",reg[7]);
+	}
+	printf("\n\n");
+	//print_values();
+	pc = pop();
+	print_values();
+	return true;
+
+}
+
+void push(pc){
+	memory[sp] = pc+4;
+	sp = sub(sp,1);
+	printf("stack in push %d\n", sp);	
+}
+int pop(){
+	sp = add(sp,1);
+	printf("stack in pop %d\n", sp);
+	return memory[sp];
+
+}
+
+
+/********************************************************************************************
+
+
+**********************************************************************************************/
+int recursive_binary_search(int start,int end,int key){
+	temp_reg[13] = start;
+	temp_reg[14] = end;
+	temp_reg[15] = key;
+	//printf("Start PC = %d\n",pc);
+	cmpq(temp_reg[13],temp_reg[14]);
+	//printf("%d>=%d\n",temp_reg[14],temp_reg[13]);
+	pc = pc+4;
+	//printf("PC before IF= %d\n",pc);
+	if(flags[1] == 1 || flags[2] == 1){
+		int temp_reg[16];
+		temp_reg[16] = sub(temp_reg[14],temp_reg[13]);
+		//printf("temp_reg[16] after sub =  %d\n",temp_reg[16]);
+		pc = pc+4;
+		//printf("PC = %d\n",pc);
+		temp_reg[16] = division(temp_reg[16],2);
+		//printf("temp_reg[16] after division = %d\n",temp_reg[16]);
+		pc = pc+4;
+		//printf("PC = %d\n",pc);
+		temp_reg[16] = add(temp_reg[13],temp_reg[16]);
+		//printf("temp_reg[16] after add = %d\n",temp_reg[16]);
+		pc = pc+4;
+		//printf("PC = %d\n",pc);
+		cmpq(memory[temp_reg[16]],temp_reg[15]);	
+		pc = pc+4;
+		//printf("PC after cmpq= %d\n",pc);
+		if (flags[1]==1){
+		//	printf("%d==%d\n",memory[temp_reg[16]],temp_reg[15]);
+			return temp_reg[16];
+		}
+		else if(flags[2]==1){
+			temp_reg[13] = add(temp_reg[16],1);
+			pc = pc+4;
+		//	printf("%d<%d\n",memory[temp_reg[16]],temp_reg[15]);
+			printf("SP before push= %d\n",sp);
+			push(pc);
+			jump(location_recursive_binary_search);
+			pc = pop();
+			printf("SP after pop= %d\n",sp);
+			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);
+			
+		}
+		else{
+		//	printf("%d>%d\n",memory[temp_reg[16]],temp_reg[15]);
+			temp_reg[14] = sub(temp_reg[16],1);
+			pc = pc +4;
+			push(pc);
+			jump(location_recursive_binary_search);
+			printf("SP before push= %d\n",sp);
+			pc = pop();
+			printf("SP after pop= %d\n",sp);
+			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);
+			
+		}
+		
+	}
+	return -1;
+}
+
+
+
 /********************************************************************************************
 
 
@@ -138,7 +315,7 @@ bool cond_codes(){
 	printf("3. Format for SETL operation: SETL dest Eg: SETL A\n");	
 	printf("4. Format for SETLE operation: SETLE dest Eg: SETLE A\n");
 	printf("5. Format for SETG operation: SETG dest Eg: SETG A\n");
-	printf("6. Format for SETE operation: SETE dest Eg: SETE A\n");
+	printf("6. Format for SETE operation: SETE dest Eg: SETE A\n");		
 	char instruction[20];
 	int len;
 	char *p2 = NULL;
@@ -267,6 +444,100 @@ int setle(){
 		return 0;
 	}
 }
+/********************************************************************************************
+Conditional codes with two operands.
+/********************************************************************************************/
+bool condcode_two(){
+printf("1. Format for ADDQ operation: ADDQ src,dest Eg: ADDQ A,B\n");
+printf("2. Format for CMPQ operation: CMPQ src,dest Eg: CMPQ A,B\n");
+char instruction[20];
+	int len;
+	char *p2 = NULL;
+	fgets(instruction,20,stdin);
+	len = strlen(instruction);
+	instruction[len-1] = '\0';
+	p1 = strtok(instruction, " ");
+	p2 = strtok(NULL," ");
+	srcreg = strtok(p2,",");
+	src = srcreg[0]-'A';
+	if(src > P){
+			printf("Source register should be from Register A-P \n");
+			return false;
+		}
+	p2 = strtok(NULL," ");
+	destreg = strtok(p2,",");
+	dest = destreg[0]-'A';
+	if(dest > P){
+			printf("Destination register should be from Register A-P \n");
+			return false;
+		}
+	printf("Dest = %s\t Src reg = %s\n",destreg,srcreg);
+	/*****************************ADDITION**************************/
+		if (strcasecmp(p1, "ADDQ")==0) {
+			reg[dest] = addq(reg[src],reg[dest]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();	
+			return true;		
+		}
+		else if (strcasecmp(p1, "CMPQ")==0) {
+			reg[dest] = cmpq(reg[src],reg[dest]);
+			printf("Result %d\n", reg[dest]);
+			pc = pc + 4;
+			print_values();	
+			return true;		
+		}
+		else
+		{
+		return false;
+		}
+}
+/**************************************ADDQ*******************************************************/
+int addq(int src, int dest){
+	temp_reg[9] = src;
+	temp_reg[10] = dest;
+	temp_reg[11] = add(temp_reg[9],temp_reg[10]);
+	if(temp_reg[11] == 0)
+	{
+	printf("Zero Flag is set\n");
+		flags[1] = 1;
+	}
+	if(temp_reg[11] < 0)
+	{
+	printf("Sign Flag is set\n");
+	flags[2] = 1;
+	}
+	if((temp_reg[9]>0 && temp_reg[10]>0 && temp_reg[11]<0)||(temp_reg[9]<0 && temp_reg[10]<0) && temp_reg[10]>=0)
+	{
+	printf("Overflow Flag is set\n");
+		flags[3] = 1;
+	}
+	return temp_reg[11];
+}
+
+/**************************************CMPQ*******************************************************/
+int cmpq(int src, int dest){
+	temp_reg[9] = src;
+	temp_reg[10] = dest;
+	temp_reg[11] = sub(temp_reg[9],temp_reg[10]);
+	if(temp_reg[9] == temp_reg[10])
+	{
+	//printf("Zero Flag is set\n");
+		flags[1] =1;
+	}
+	if(temp_reg[11] < 0)
+	{
+	//printf("Sign Flag is set\n");
+		flags[2] = 1;
+	}
+	if((temp_reg[9]>0 && temp_reg[10]<0 && temp_reg[11]<0)||(temp_reg[9]<0 && temp_reg[10]>0) && temp_reg[10]>0)
+	{
+	//printf("Overflow Flag is set");
+		flags[3] = 1;
+	}
+	return temp_reg[11];
+}
+
 /*********************************************************************************************
 Simple Function which calls the respective instruction. A function pointer is implemented 
 to point the functions like add, sub, mul, division and mod.
@@ -365,10 +636,6 @@ operand instruction. Also, flags like sign flag, carry flag, overflow flag and z
 /**************************************************************************************************/
 
 int add(int inti, int src){
-	//opcode = memory[pc];
-	//dest = memory[pc+1];
-	//inti =  memory[pc+2];
-	//src = memory[pc+3];
 	int carry;
 	temp_reg[0] = src;
 	temp_reg[1] = inti;
@@ -413,7 +680,7 @@ destination register. Thus making it a 3 operand instruction. Basically it perfo
 of the negative number and calls the addition function.
 /******************************************************************************************************/
 int sub(int inti, int src){
-	printf("Performing Subtraction \n");	
+	//printf("Performing Subtraction \n");	
 	temp_reg[4] = src;
 	temp_reg[5] = inti; //2'S complement
 	temp_reg[4] = (*fun_ptr_add)(~temp_reg[4], 1);
@@ -429,7 +696,7 @@ destination register. Thus making it a 3 operand instruction. Primarily, with th
 multiplication instruction is carried out.
 /*********************************************************************************************************/
 int mul(int inti, int src){
-	printf("Performing Multiplication Operation\n");
+	//printf("Performing Multiplication Operation\n");
 	int result = 0;
 	temp_reg[2] = src;
 	temp_reg[3] = inti;
@@ -467,11 +734,11 @@ int division(int inti, int src){
   }        
   if (temp_reg[6]!= 0 )
   {   
-    printf("dividing");             
+   // printf("dividing");             
     while (temp_reg[5]>=temp_reg[6])
 	{              
       temp_reg[5] = (*fun_ptr_sub)(temp_reg[5],temp_reg[6]);  	    
-	  printf("temp_reg[5] afteR sub %d",temp_reg[5]); 
+//	  printf("temp_reg[5] afteR sub %d",temp_reg[5]); 
       result++;          
     }      
   }     
@@ -493,7 +760,7 @@ int division(int inti, int src){
 	else{
 		flags[1] = false;
 	}
-  printf(" rem = %d \n",temp_reg[0]);   
+ // printf(" rem = %d \n",temp_reg[0]);   
   return   result; 
 }
 
@@ -535,75 +802,6 @@ int   c= 0 ,sign = 0;
   return temp_reg[7];
   }
 
-/*****************************************UNCONDTIONAL JUMP*****************************************/
-bool unconditional(){
-
-	printf("Enter the instruction: jmp\n");
-	char instruction[20];
-	fgets(instruction,20,stdin);
-
-      //remove newline from the input
-      int len = strlen(instruction);
-      instruction[len-1]='\0';
-
-      p1 = strtok(instruction," ");
-
-      printf("Value of Program Counter: %xH \n", pc);
-      //PC = PC + (int) temp_str;
-      pc = pc + 500;
-      printf("Value of Program Counter: %xH \n", pc);
-
-      return true;
-}
-
-int cmp(){
-	printf("Enter the instruction: cmp A,B\n");
-	char instruction[20];
-	int len;
-	char *p2 = NULL;
-	fgets(instruction,20,stdin);
-	len = strlen(instruction);
-	instruction[len-1] = '\0';
-	p1 = strtok(instruction, " ");
-	p2 = strtok(NULL," ");
-	destreg = strtok(p2,",");
-	dest = destreg[0]-'A';
-	if(dest > P){
-		printf("Register should be from Register A-P \n");
-		return false;
-	}
-
-	p2 = strtok(NULL," ");
-	srcreg = strtok(p2,",");
-	src = srcreg[0]-'A';
-	if(src > P){
-	printf("Register should be from Register A-P \n");
-	return false;
-	}
-	printf("Register1 = %s\tRegister2 = %s\n",destreg,srcreg);
-	printf("Value of flag registers before execution of the instruction\n");
-	printf("Value of program counter %xH\n", pc);
-
-	//COMPARING BY SUBSTRACTION. bANKING HEAVILY ON THE FLAG UPDATION IN SUB.
-	reg[dest] = (*fun_ptr_sub)(reg[inti],reg[src]);
-	printf("Result %d\n", reg[dest]);
-	jump_decision();
-
-	print_values();
-	return 0;
-}
-
-int jump_decision(){
-
-	if(flags[1]==true){
-		//Jump equal
-	}
-	else if(flags[1]==false){
-		//Jump not equal
-	}
-	return 0;
-
-}
 
 /*****************************************LOAD AND STORE FUNCTION*****************************************/
 bool load_and_store(){
@@ -877,9 +1075,9 @@ int main(){
 			printf("****************Instructions Menu****************\n");
 			printf("1. Load/Store Instruction\n");
 			printf("2. ALU operations - ADD/SUB/MUL/DIV/MOD\n");
-			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq\n");
-			printf("4. Unconditional Jump\n");
-			printf("5. Conditional Jump\n");
+			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq,addq\n");
+			printf("4. Condition Codes - compq,addq\n");
+			printf("5. Perform Recursive Binary Search\n");
 			printf("6. EXIT\n");
 			fgets(char_option,5,stdin);
 			sscanf(char_option,"%d",&option);
@@ -899,7 +1097,7 @@ int main(){
 						printf("Wrong Instruction\n");
 						exit(-1);
 					}
-					break;
+					break;			
 				case 3: 
 					res = cond_codes();
 					if(res == false){
@@ -908,12 +1106,22 @@ int main(){
 					}
 					break;
 				case 4:
-					res = unconditional();
+					res = condcode_two();
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
 					break;
+				
 				case 5:
-					res = cmp();
-					break;
-				case 6:
+					res = binary_search();
+					
+					if(res == false){
+						printf("Wrong Instruction\n");
+						exit(-1);
+					}
+					
+				case 7:
 					res = false;
 					break;
 			}
@@ -921,3 +1129,4 @@ int main(){
 		}	
 	}
 }
+
