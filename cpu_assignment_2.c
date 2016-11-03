@@ -1,9 +1,10 @@
 /* ******************************************************************************************************
-    PROGRAM NAME: cpu_setup.c
+    PROGRAM NAME: cpu_3.c
     OBJECTIVE: Develop Best CPU.
-    DESCRIPTION: Setup CPU architecture with LOAD and STORE data and ALU operations and FLAGS. 
+    DESCRIPTION: Setup CPU architecture with LOAD, STORE,LEA and ALU operations, Condition Codes, Jump, FLAGS
+		 and Recursive Binary Search with Stack implementations. 
     TEAM MEMBERS: Sanket Dhami, Karthik Sadanand, Ramyashree, Neha Rege
-    DATE: 8th Oct, 2016
+    DATE: 2nd Nov, 2016
    ****************************************************************************************************** */
   
 #include <stdio.h>
@@ -45,14 +46,14 @@
  int memory[MEMORY_SIZE];	/* Total Memory size = 2048 bytes */
  int reg[REG_COUNT];		/* Number of General Purpose Registers = 16 */
  int temp_reg[TEMP_REG_COUNT];		/* Number of Temporary Registers = 16 */
-enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P};
+ enum registers{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P};
  int src=0, dest=0,inti=0;	/* Index for source and destination registers */
  int opcode = 0;	
  int offset=0;
-int i = 0;
+ int i = 0;
 
-char *destreg = NULL, *srcreg = NULL,*basereg = NULL, *indexreg = NULL,*intreg = NULL;
-bool flags[4]={ false };	/* flag register for setting various flags*/
+ char *destreg = NULL, *srcreg = NULL,*basereg = NULL, *indexreg = NULL,*intreg = NULL;
+ bool flags[4]={ false };	/* flag register for setting various flags*/
 /*Carry Flag = flags[0] 
  * Zero Flag = flags[1]
  * Sign Flag = flags[2]
@@ -63,9 +64,10 @@ bool flags[4]={ false };	/* flag register for setting various flags*/
  int pc = INSTR_MEMORY_BASE_ADD;	/* PC initialized to starting address of instruction memory */
 
 /* Stack Pointer */
-int sp = MEMORY_SIZE-1;
-char *p1 = NULL;
-int address,part_address,result;
+ int sp = MEMORY_SIZE-1;
+ char *p1 = NULL;
+
+ int address,part_address,result;
 
 /******Function Declarations*********/
 bool load_store_and_lea();
@@ -109,7 +111,7 @@ int (*fun_ptr_division)(int, int) = &division;
 int (*fun_ptr_mod)(int, int) = &mod;
 
 
-
+/************************Initialize Memory values to 0*******************/
 void init_memory( )
 {
 	int i;
@@ -177,6 +179,7 @@ order and the element to be searched. Later it calls recursive_binary_search fun
 returns the index for the searched element and displays the position og found element.
 **********************************************************************************************/
 bool binary_search(){
+	p1 = "CALL";
 	printf("Enter number of elements for binary search\n");
 	char element_char[5];
 	int element_int,element;
@@ -206,19 +209,16 @@ bool binary_search(){
 		temp_reg[12] = temp_reg[12] + 1;
 	}
 	printf("\n");
-	//printf("%d\n",temp_reg[12]);
-
 	
 	printf("Enter the element to be searched\n");
 	scanf("%d",&key);
 	push(pc);										//PUSH PC
-	//pc = 500;		//RECURSIVE BINARY SEARCH FUNCTION IS AT 500th LOCATION
-	//temp_reg[12] = temp_reg[12] - 1;
 	jump(location_recursive_binary_search);							//JUMP 500
 	temp_reg[16] = recursive_binary_search(1900,temp_reg[12],key);  			//CALL 
 	temp_reg[16] = sub(temp_reg[16],1900);	
 	if(temp_reg[16]<0){
 		printf("****ELEMENT NOT FOUND****\n");
+		reg[7] = -1;
 	}
 	else{
 		reg[7] = add(temp_reg[16],1);							//ADD R7,TR16,1 
@@ -226,7 +226,6 @@ bool binary_search(){
 		printf("ELEMENT FOUND AT POSITION %d\n",reg[7]);
 	}	
 	printf("\n\n");
-	//print_values();
 	pc = pop();										//POP PC
 	print_values();
 	return true;
@@ -236,11 +235,11 @@ bool binary_search(){
 void push(pc){
 	memory[sp] = pc+4;
 	sp = sub(sp,1);										//SUB SP,SP,1
-	printf("stack in push %d\n", sp);		
+	//printf("stack in push %d\n", sp);		
 }
 int pop(){
 	sp = add(sp,1);										//ADD SP,SP,1
-	printf("stack in pop %d\n", sp);
+	//printf("stack in pop %d\n", sp);
 	return memory[sp];
 
 }
@@ -258,53 +257,39 @@ int recursive_binary_search(int start,int end,int key){
 	temp_reg[13] = start;
 	temp_reg[14] = end;
 	temp_reg[15] = key;
-	//printf("Start PC = %d\n",pc);
+	
 	cmpq(temp_reg[13],temp_reg[14]);							//CMPQ TR13,TR14
-	//printf("%d>=%d\n",temp_reg[14],temp_reg[13]);
+	
 	pc = pc+4;
-	//printf("PC before IF= %d\n",pc);
+	
 	if(flags[1] == 1 || flags[2] == 1){						
-		//int temp_reg[16];
+		
 		temp_reg[16] = sub(temp_reg[14],temp_reg[13]);					//SUB TR16,TR14,TR13
-		//printf("temp_reg[16] after sub =  %d\n",temp_reg[16]);
 		pc = pc+4;
-		//printf("PC = %d\n",pc);
 		temp_reg[16] = division(temp_reg[16],2);					//DIV TR16,TR16,2
-		//printf("temp_reg[16] after division = %d\n",temp_reg[16]);
 		pc = pc+4;
-		//printf("PC = %d\n",pc);
 		temp_reg[16] = add(temp_reg[13],temp_reg[16]);					//ADD TR16,TR13,TR16
-		//printf("temp_reg[16] after add = %d\n",temp_reg[16]);
 		pc = pc+4;
-		//printf("PC = %d\n",pc);
 		cmpq(memory[temp_reg[16]],temp_reg[15]);					//CMPQ TR16,TR15
 		pc = pc+4;
-		//printf("PC after cmpq= %d\n",pc);
 		if (flags[1]==1){
-		//	printf("%d==%d\n",memory[temp_reg[16]],temp_reg[15]);
 			return temp_reg[16];							//RET
 		}
 		else if(flags[2]==1){
 			temp_reg[13] = add(temp_reg[16],1);					//ADD TR13,TR16,1
 			pc = pc+4;
-		//	printf("%d<%d\n",memory[temp_reg[16]],temp_reg[15]);
-			printf("SP before push= %d\n",sp);
 			push(pc);								//PUSH 
 			jump(location_recursive_binary_search);					//JUMP 500
 			pc = pop();								//POP
-			printf("SP after pop= %d\n",sp);
 			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]);	//CALL & RET 
 			
 		}
 		else{
-		//	printf("%d>%d\n",memory[temp_reg[16]],temp_reg[15]);
 			temp_reg[14] = sub(temp_reg[16],1);					//SUB TR14,TR16,1
 			pc = pc +4;
 			push(pc);								//PUSH
 			jump(location_recursive_binary_search);					//JUMP 500
-			printf("SP before push= %d\n",sp);
 			pc = pop();								//POP
-			printf("SP after pop= %d\n",sp);
 			return recursive_binary_search(temp_reg[13],temp_reg[14],temp_reg[15]); //CALL & RET
 			
 		}
@@ -333,7 +318,6 @@ bool cond_codes(){
 	len = strlen(instruction);
 	instruction[len-1] = '\0';
 	p1 = strtok(instruction, " ");
-	//printf("%s\n",p1);
 	p2 = strtok(NULL," ");
 	destreg = strtok(p2,",");
 	dest = destreg[0]-'A';
@@ -341,7 +325,6 @@ bool cond_codes(){
 			printf("Destination register should be from Register A-P \n");
 			return false;
 		}
-	//printf("Dest = %s\n",destreg);
 /**********************************************************************************************/
 	if (strcasecmp(p1, "SETE")==0) {
 		reg[dest] = sete();
@@ -385,19 +368,12 @@ bool cond_codes(){
 		print_values();
 		return true;			
 	}
-/*	else if (strcasecmp(p1, "COMPQ")==0) {
-		reg[dest] = compq();
-		//printf("Result %d\n", reg[dest]);
-		pc = pc + 4;
-		print_values();
-		return true;			
-	}*/
 	else{
 		return false;
 	}
 }
 
-
+/**************************SETE(Sets the destination register if Zero flag is set) ************/
 int sete(){
 	if(flags[1] == true){
 
@@ -408,6 +384,7 @@ int sete(){
 	}
 }
 
+/********************SETS(Sets the destination register if Sign flag is set)*****************/
 int sets(){
 	printf("Sign Flag = %d\n",flags[2]);
 	if(flags[2] == true){
@@ -417,7 +394,7 @@ int sets(){
 		return 0;
 	}
 }
-
+/********************SETNS(Sets the destination register if signed flag is not set***********/
 int setns(){
 	printf("Sign Flag = %d\n",flags[2]);
 	if(flags[2] == false){
@@ -427,7 +404,7 @@ int setns(){
 		return 0;
 	}
 }
-
+/****************SETL(Sets the destination register if (SF^OF))**************************/
 int setl(){
 	if(flags[2]!=flags[3]){
 		return 1;
@@ -436,7 +413,7 @@ int setl(){
 		return 0;
 	}
 }
-
+/**************SETG(Sets the destination register if ~(SF^OF)&~ZF)***********************/
 int setg(){
 	if((!(flags[2]!=flags[3]))&&(!flags[1])){
 		return 1;
@@ -445,7 +422,7 @@ int setg(){
 		return 0;
 	}
 }
-
+/****************SETLE(Sets the destination register if (SF^OF)|ZF)**************************/
 int setle(){
 	if((flags[2]!=flags[3])||(flags[1])){
 		return 1;
@@ -482,7 +459,7 @@ char instruction[20];
 			return false;
 		}
 	printf("Dest = %s\t Src reg = %s\n",destreg,srcreg);
-	/*****************************ADDITION**************************/
+	
 		if (strcasecmp(p1, "ADDQ")==0) {
 			reg[dest] = addq(reg[src],reg[dest]);
 			printf("Result %d\n", reg[dest]);
@@ -648,9 +625,9 @@ greater nothing is done.
 *********************************************************************************************************/
 bool loops()
 {
-	printf("1. Format for For operation: to increment a number by one till the max is reached For Eg: for B,number\n");
-	printf("2. Format for Do..While operation: it increments once without checking condition then it checks the condition to increment for Eg: dowhile B,number \n");
-	printf("3. Format for While..do operation: it increments after the condition is true for Eg: whiledo B,number\n");
+	printf("1. Format for For operation: to increment a number by one till the max is reached For Eg: for B,F\n");
+	printf("2. Format for Do..While operation: it increments once without checking condition then it checks the condition to increment for Eg: dowhile B,F \n");
+	printf("3. Format for While..do operation: it increments after the condition is true for Eg: whiledo B,F\n");
 	char instruction[20];
 	int len;
 	char *p2 = NULL;
@@ -762,7 +739,7 @@ int looping(int dest,int count,int max)
 	temp_reg[11] = 1;
 	temp_reg[12] = count;
 	temp_reg[13] = max;
-	printf("max value %d",max);
+	
 	temp_reg[16]= add(temp_reg[16],temp_reg[11]); // ADD R3,R1,R2
 	pc = pc + 4;
 	temp_reg[12] = add(temp_reg[12],temp_reg[11]); // ADD R3,R1,R2
@@ -786,7 +763,7 @@ int loopingwhile(int dest,int max)
 	temp_reg[16] = dest;
 	temp_reg[11] = 1;
 	temp_reg[13] = max;
-	printf("max value %d",max);
+	
 	temp_reg[16]= add(temp_reg[16],temp_reg[11]);	// ADD R3,R1,R2
 	pc = pc + 4;
 	cmpq(temp_reg[16],temp_reg[13]);	
@@ -1094,9 +1071,9 @@ bool load_store_and_lea(){
 			return false;
 		}
 
-        p2 = strtok(NULL,"");
+       		 p2 = strtok(NULL,"");
 
-        p2 = strtok(p2,"(");
+       		 p2 = strtok(p2,"(");
 			
 		if(p2==NULL){
 			offset = 0;
@@ -1293,7 +1270,7 @@ int execute_load(){
 	offset =  memory[pc+2];
 	part_address = memory[pc+3];
 	address = part_address + offset;
-//	printf("part_address = %d\t full address = %d\n",part_address,address);
+
 	if(address >= DATA_MEMORY_BASE_ADD && address < MEMORY_SIZE){
 		reg[dest] = memory[address];
 		pc = pc + 4;
@@ -1345,7 +1322,7 @@ int execute_store(){
 	offset =  memory[pc+2];
 	part_address = memory[pc+3];
 	address = part_address + offset;
-	printf("part_address = %d\t full address = %d\n",part_address,address);
+	//printf("part_address = %d\t full address = %d\n",part_address,address);
 	if(address >= DATA_MEMORY_BASE_ADD && address < MEMORY_SIZE){
 		memory[address] = reg[src];
 		pc = pc + 4;
@@ -1357,7 +1334,7 @@ int execute_store(){
 	}
 }
 
-
+/******************************Main********************************/
 int main(){
 	bool res = true;
 	int option;
@@ -1376,15 +1353,13 @@ int main(){
 			printf("****************Instructions Menu****************\n");
 			printf("1. Load/Store/LEA Instruction\n");
 			printf("2. ALU operations - ADD/SUB/MUL/DIV/MOD\n");
-			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns,compq\n");
+			printf("3. Condition Codes - setne,sete,setle,setg,sets,setns\n");
 			printf("4. Condition Codes - compq,addq\n");
 			printf("5. Perform Recursive Binary Search with Stack operations\n");
-			printf("6. Loops, for, do..while, while..do implemented using jump instructions\n");
+			printf("6. Loops implementing Jump Instruction for, do..while, while..do\n");
 			printf("7. EXIT\n");
 			fgets(char_option,5,stdin);
 			sscanf(char_option,"%d",&option);
-			//option = option - '0';
-			//printf(" %d\n",option);
 			switch(option){
 				case 1:
 					res = load_store_and_lea();
@@ -1440,4 +1415,3 @@ int main(){
 		}	
 	}
 }
-
